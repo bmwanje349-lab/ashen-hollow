@@ -167,19 +167,24 @@ function drawButtons() {
   }
 }
 function drawTitle() {
-  const z = ZONES[0], g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#04060b'); g.addColorStop(1, '#16213a'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-  glow(W / 2, 230, 360, z.glow, 0.12);
-  ctx.fillStyle = '#0a0f1a';
-  for (let i = 0; i < 9; i++) { const x = i * 130 - ((TM * 6) % 130), h = 120 + ((i * 53) % 90); ctx.fillRect(x, H - h, 40, h); ctx.beginPath(); ctx.arc(x + 20, H - h, 20, Math.PI, 0); ctx.fill(); }
-  ctx.fillStyle = 'rgba(160,185,255,0.5)';
-  for (let i = 0; i < 40; i++) ctx.fillRect((i * 97 + TM * (4 + i % 6)) % W, (i * 61 + TM * (10 + i % 5) * 3) % H, 2, 2);
-  ctx.save(); ctx.translate(W / 2, 170); ctx.scale(2.4, 2.4); glow(0, -30, 60, '#ffffff', 0.35);
-  ctx.fillStyle = '#eef2fb'; ctx.beginPath(); ctx.ellipse(0, -30, 11, 12.5, 0, 0, 7); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(-6, -40); ctx.quadraticCurveTo(-16, -50, -10, -62); ctx.quadraticCurveTo(-8, -50, -3, -42); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(6, -40); ctx.quadraticCurveTo(16, -50, 10, -62); ctx.quadraticCurveTo(8, -50, 3, -42); ctx.fill();
-  ctx.fillStyle = '#05070c'; ctx.beginPath(); ctx.ellipse(-4, -30, 2.4, 4, 0.2, 0, 7); ctx.ellipse(4, -30, 2.4, 4, -0.2, 0, 7); ctx.fill(); ctx.restore();
-  txt('ASHEN HOLLOW', W / 2, 258, 54, '#f2f5ff', 'center');
-  ctx.fillStyle = '#7b8bb4'; ctx.fillRect(W / 2 - 160, 288, 320, 1.5);
+  const im = GAME_ART.worlds;
+  if (im && im.complete && im.naturalWidth) ctx.drawImage(im, 0, 0, 240, 135, 0, 0, W, H);
+  else {
+    const z = ZONES[0], g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#04060b'); g.addColorStop(1, '#16213a');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  }
+  ctx.fillStyle = 'rgba(3,5,13,0.48)'; ctx.fillRect(0, 0, W, H);
+  const veil = ctx.createLinearGradient(0, 0, 0, H);
+  veil.addColorStop(0, 'rgba(4,5,14,0.20)');
+  veil.addColorStop(0.58, 'rgba(4,5,14,0.08)');
+  veil.addColorStop(1, 'rgba(2,3,9,0.72)');
+  ctx.fillStyle = veil; ctx.fillRect(0, 0, W, H);
+  glow(W / 2, 180, 250, '#aebdff', 0.18);
+  drawKnightFrame(0, 1, W / 2, 214, 126, 126, 1, 1);
+  txt('ASHEN HOLLOW', W / 2, 264, 50, '#f2f5ff', 'center');
+  ctx.fillStyle = 'rgba(220,228,255,0.7)'; ctx.fillRect(W / 2 - 170, 291, 340, 1.2);
+  txt('A kingdom buried beneath the falling ash', W / 2, 312, 17, '#c0c9df', 'center', 'italic');
   drawButtons();
 }
 function drawEnding() {
