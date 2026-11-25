@@ -6,14 +6,16 @@
 <meta name="theme-color" content="#000000">
 <meta name="mobile-web-app-capable" content="yes">
 <title>Ashen Hollow</title>
+<link rel="preload" href="assets/worlds.webp" as="image" type="image/webp">
+<link rel="preload" href="assets/knight.png" as="image" type="image/png">
 <style>
 html,body{margin:0;height:100%;background:#000;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;font-family:Georgia,serif}
 #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
 canvas{display:block;background:#000;touch-action:none}
 #touch{position:fixed;inset:0;pointer-events:none}
 #touch.hide{display:none}
-#touch button{pointer-events:auto;position:absolute;border:2px solid rgba(200,215,255,.5);background:rgba(8,12,22,.5);color:#e8eefc;font:bold 14px Georgia,serif;border-radius:50%;touch-action:none;padding:0;outline:none;-webkit-user-select:none;user-select:none}
-#touch button.on{background:rgba(190,210,255,.55);border-color:#fff}
+#touch button{pointer-events:auto;position:absolute;border:1.5px solid rgba(190,210,255,.58);background:linear-gradient(145deg,rgba(25,34,58,.86),rgba(4,7,16,.90));color:#f0f4ff;font:bold 14px Georgia,serif;border-radius:50%;box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 8px 26px rgba(0,0,0,.38);backdrop-filter:blur(5px);touch-action:none;padding:0;outline:none;-webkit-user-select:none;user-select:none}
+#touch button.on{background:linear-gradient(145deg,rgba(170,194,255,.82),rgba(64,89,150,.92));border-color:#fff;box-shadow:0 0 22px rgba(172,199,255,.42),inset 0 1px 0 rgba(255,255,255,.5)}
 #bl{left:16px;bottom:30px;width:78px;height:78px;font-size:28px!important}
 #br{left:108px;bottom:30px;width:78px;height:78px;font-size:28px!important}
 #bu{left:62px;bottom:116px;width:56px;height:56px;font-size:20px!important}
