@@ -1,0 +1,12 @@
+{
+  "name": "ashen-hollow",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ashen Hollow - a dark metroidvania (HTML5 + Capacitor Android)",
+  "scripts": { "test": "node test/reach.js && node test/game.js" },
+  "dependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/cli": "^6.2.0",
+    "@capacitor/core": "^6.2.0"
+  }
+}

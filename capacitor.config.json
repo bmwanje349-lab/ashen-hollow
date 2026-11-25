@@ -1,0 +1,7 @@
+{
+  "appId": "com.ashenhollow.game",
+  "appName": "Ashen Hollow",
+  "webDir": "www",
+  "backgroundColor": "#000000",
+  "server": { "androidScheme": "https" }
+}

@@ -1,0 +1,130 @@
+'use strict';
+/* ===== ASHEN HOLLOW - canvas, audio, save, input ===== */
+const W = 960, H = 540;
+const cv = document.getElementById('game');
+const ctx = cv.getContext('2d');
+let K = 1;
+function fit() {
+  const s = Math.min(innerWidth / W, innerHeight / H);
+  cv.style.width = Math.floor(W * s) + 'px';
+  cv.style.height = Math.floor(H * s) + 'px';
+  K = Math.max(1, Math.min(1.6, s * (window.devicePixelRatio || 1)));
+  cv.width = Math.round(W * K);
+  cv.height = Math.round(H * K);
+}
+addEventListener('resize', fit);
+fit();
+const rnd = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const isTouch = ('ontouchstart' in window) || (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0);
+
+/* ---------- audio (synthesized) ---------- */
+let AC = null, NB = null, muted = false;
+function audioInit() {
+  try {
+    if (!AC) {
+      const C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return;
+      AC = new C();
+      const len = AC.sampleRate >> 1;
+      NB = AC.createBuffer(1, len, AC.sampleRate);
+      const d = NB.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    }
+    if (AC.state === 'suspended') AC.resume();
+  } catch (e) {}
+}
+function tone(f, d, type, vol, slide) {
+  if (!AC || muted) return;
+  try {
+    const t = AC.currentTime, o = AC.createOscillator(), g = AC.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(f, t);
+    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, f + slide), t + d);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol || 0.05, t + Math.min(0.03, d / 3));
+    g.gain.exponentialRampToValueAtTime(0.0005, t + d);
+    o.connect(g); g.connect(AC.destination);
+    o.start(t); o.stop(t + d + 0.03);
+  } catch (e) {}
+}
+function noise(d, vol, fq, hp) {
+  if (!AC || muted || !NB) return;
+  try {
+    const t = AC.currentTime, s = AC.createBufferSource(), g = AC.createGain(), f = AC.createBiquadFilter();
+    s.buffer = NB; f.type = hp ? 'highpass' : 'lowpass'; f.frequency.value = fq || 2000;
+    g.gain.setValueAtTime(vol || 0.1, t);
+    g.gain.exponentialRampToValueAtTime(0.0005, t + d);
+    s.connect(f); f.connect(g); g.connect(AC.destination);
+    s.start(t); s.stop(t + d + 0.03);
+  } catch (e) {}
+}
+const SFX = {
+  swing: () => { noise(0.12, 0.07, 3000, true); tone(420, 0.1, 'triangle', 0.025, -200); },
+  hit: () => { noise(0.1, 0.12, 1800); tone(180, 0.1, 'square', 0.04, -90); },
+  clink: () => { tone(1400, 0.15, 'triangle', 0.05, -400); noise(0.06, 0.08, 4000, true); },
+  jump: () => { tone(260, 0.12, 'sine', 0.04, 220); },
+  djump: () => { tone(420, 0.16, 'sine', 0.045, 380); noise(0.1, 0.03, 5000, true); },
+  dash: () => { noise(0.2, 0.09, 1500, true); tone(300, 0.18, 'sawtooth', 0.025, -200); },
+  land: () => { noise(0.08, 0.05, 500); },
+  hurt: () => { tone(120, 0.3, 'sawtooth', 0.08, -60); noise(0.2, 0.12, 900); },
+  heal: () => { tone(520, 0.4, 'sine', 0.05, 300); tone(780, 0.5, 'sine', 0.03, 300); },
+  pick: () => { [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => tone(f, 0.7, 'sine', 0.05), i * 140)); },
+  boss: () => { tone(55, 1.4, 'sawtooth', 0.12, -20); noise(1.0, 0.12, 300); },
+  bosshit: () => { noise(0.14, 0.14, 1200); tone(110, 0.14, 'square', 0.05, -50); },
+  boom: () => { noise(0.5, 0.2, 600); tone(60, 0.4, 'sawtooth', 0.1, -25); },
+  die: () => { tone(160, 1.2, 'sawtooth', 0.07, -110); },
+  bench: () => { tone(330, 1.2, 'sine', 0.04); tone(495, 1.4, 'sine', 0.03); },
+  brk: () => { noise(0.3, 0.16, 900); },
+  click: () => { tone(500, 0.05, 'triangle', 0.03); },
+  door: () => { noise(0.4, 0.08, 400); tone(70, 0.4, 'sawtooth', 0.06, -20); },
+  win: () => { [262, 330, 392, 523, 659].forEach((f, i) => setTimeout(() => tone(f, 1.2, 'sine', 0.05), i * 220)); },
+};
+function sfx(n) { try { SFX[n](); } catch (e) {} }
+let mT = 0, mStep = 0;
+const SCALE = [110, 130.8, 146.8, 164.8, 196, 220, 261.6, 329.6];
+function music(dt, boss) {
+  mT -= dt;
+  if (mT > 0) return;
+  mT = boss ? 0.28 : 2.6;
+  if (!AC || muted) return;
+  if (boss) {
+    tone(SCALE[mStep % 4] / 2, 0.5, 'sawtooth', 0.04);
+    if (mStep % 2 === 0) noise(0.1, 0.05, 250);
+    if (mStep % 8 === 6) tone(SCALE[(mStep >> 1) % 8] * 2, 0.4, 'triangle', 0.025);
+  } else {
+    tone(SCALE[(Math.random() * 5) | 0] / 2, 3.2, 'sine', 0.035);
+    if (Math.random() < 0.5) tone(SCALE[(Math.random() * 8) | 0], 2.4, 'triangle', 0.015);
+  }
+  mStep++;
+}
+
+/* ---------- save ---------- */
+const SAVE_KEY = 'ashenhollow_save_v1';
+function defaultSave() {
+  return { started: false, room: START.room, bx: START.tx, by: START.ty, ab: { dash: false, dj: false, edge: false }, cores: 0, maxhp: 5, sword: 0,
+    picks: {}, bosses: {}, broken: [], explored: { r1: 1 }, deaths: 0, time: 0, muted: false, ended: false };
+}
+let save = defaultSave();
+function loadSave() {
+  try {
+    const s = JSON.parse(localStorage.getItem(SAVE_KEY));
+    if (s && typeof s === 'object' && s.room && ROOMS[s.room]) { save = Object.assign(defaultSave(), s); save.ab = Object.assign({ dash: false, dj: false, edge: false }, s.ab || {}); }
+  } catch (e) {}
+  muted = !!save.muted;
+}
+function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
+function hasSave() { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); return !!(s && s.started); } catch (e) { return false; } }
+
+/* ---------- input ---------- */
+const inp = { left: 0, right: 0, up: 0, down: 0, jump: 0, atk: 0, dash: 0, heal: 0 };
+let pressed = {};
+function setK(k, v) { if (v && !inp[k]) pressed[k] = true; inp[k] = v ? 1 : 0; }
+const KM = {
+  ArrowLeft: 'left', a: 'left', A: 'left', ArrowRight: 'right', d: 'right', D: 'right',
+  ArrowUp: 'up', w: 'up', W: 'up', ArrowDown: 'down', s: 'down', S: 'down',
+  z: 'jump', Z: 'jump', ' ': 'jump', k: 'jump', K: 'jump',
+  x: 'atk', X: 'atk', j: 'atk', J: 'atk',
+  c: 'dash', C: 'dash', Shift: 'dash', l: 'dash', L: 'dash',
+  v: 'heal', V: 'heal', h: 'heal', H: 'heal',
+};
