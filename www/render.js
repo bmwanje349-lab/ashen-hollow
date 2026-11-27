@@ -227,7 +227,7 @@ function drawJournal() {
   ctx.strokeStyle='rgba(202,177,126,.32)';ctx.beginPath();ctx.moveTo(490,132);ctx.lineTo(490,424);ctx.stroke();
   const objective=journalObjective();txt('CURRENT THREAD',112,142,13,'#bcae8f');
   txt(objective.title,112,177,24,'#f0eadc');
-  const wrap=(text,x,y,max,lh,color,size)=>{ctx.font='16px Georgia';ctx.fillStyle=color;ctx.textAlign='left';ctx.textBaseline='top';const words=text.split(' ');let line='',yy=y;for(const word of words){const next=line?line+' '+word:word;if(ctx.measureText(next).width>max&&line){ctx.fillText(line,x,yy);line=word;yy+=lh;}else line=next;}if(line)ctx.fillText(line,x,yy);};
+  const wrap=(text,x,y,max,lh,color,size)=>{ctx.font='16px Georgia';ctx.fillStyle=color;ctx.textAlign='left';ctx.textBaseline='top';const words=text.split(' ');let line='',yy=y;for(const word of words){const next=line?line+' '+word:word;const measured=ctx.measureText(next),width=measured&&Number.isFinite(measured.width)?measured.width:next.length*8;if(width>max&&line){ctx.fillText(line,x,yy);line=word;yy+=lh;}else line=next;}if(line)ctx.fillText(line,x,yy);};
   wrap(objective.detail,112,205,334,22,'#b4bfd2',16);
   ctx.strokeStyle='rgba(199,178,139,.27)';ctx.beginPath();ctx.moveTo(112,286);ctx.lineTo(456,286);ctx.stroke();
   txt('ABILITIES RECOVERED',112,310,13,'#bcae8f');
