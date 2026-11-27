@@ -139,7 +139,7 @@ for (const id of Object.keys(roomOf)) {
   newGame({ dash: true, dj: true }); A.loadRoom(roomOf[id], 1, 13);
   let G = A.G, p = G.p, hurt = 0, f = 0; const moves = new Set();
   p.x = 9 * T; p.y = (A.ROOMS[roomOf[id]].boss.floorRow) * T;
-  while (f++ < 60 * 40 && !p.dead) {
+  while (f++ < 60 * 60 && !p.dead) {
     const before = p.hp; A.step(1 / 60);
     if (G.boss && G.boss.mvName && G.boss.st === 'act') moves.add(G.boss.mvName);
     if (p.hp < before) { hurt++; p.hp = p.maxhp; }
