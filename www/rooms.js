@@ -77,7 +77,6 @@ mkRoom('r5', 'The Sundered Chasm', 0, 2, 3, 48, 17, (o) => {
   o.air(47, 10, 1, 4); o.exit(47, 10, 1, 4, 'r6', 1, 13);
   o.air(11, 14, 10, 2); o.spikes(11, 15, 10);
   o.bench(4, 13);
-  o.pick('C', 20, 13, 'charm_reach');
   o.sign(8, 13, 'The path is severed. A burst of speed might carry you across.');
   o.ent('c', 6, 13); o.ent('c', 25, 13); o.ent('s', 32, 13); o.ent('h', 38, 13); o.ent('f', 41, 5);
 });
@@ -89,6 +88,7 @@ mkRoom('r6', 'Weeping Caverns', 1, 3, 3, 44, 17, (o) => {
   o.air(43, 10, 1, 4); o.exit(43, 10, 1, 4, 'r7', 1, 13);
   o.plat(12, 11, 4); o.plat(18, 8, 4); o.plat(26, 11, 4); o.plat(32, 8, 4);
   o.bench(5, 13);
+  o.pick('C', 20, 13, 'charm_reach');
   o.ent('f', 15, 6); o.ent('f', 30, 5); o.ent('s', 21, 13); o.ent('s', 35, 13); o.ent('c', 25, 13); o.ent('l', 39, 13);
 });
 mkRoom('r7', 'The Drip Hall', 1, 4, 3, 56, 17, (o) => {

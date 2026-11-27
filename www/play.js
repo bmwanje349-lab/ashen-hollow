@@ -240,7 +240,7 @@ function go(s) {
     btn(W/2-100, 454, 200, 44, 'BACK', () => go('pause'));
   } else if (s === 'waystones') {
     const ids = Object.keys(save.stations).filter(id => save.stations[id] && ROOMS[id]);
-    ids.slice(0,5).forEach((id,i) => btn(W/2-205, 156+i*56, 410, 48, STATION_NAMES[id] || ROOMS[id].name, () => travelTo(id), { fs:16 }));
+    ids.forEach((id,i) => { const col=i%2, row=Math.floor(i/2); btn(W/2-310+col*320, 150+row*64, 300, 52, STATION_NAMES[id] || ROOMS[id].name, () => travelTo(id), { fs:15 }); });
     btn(W/2-100, 464, 200, 42, 'BACK', () => go('pause'));
   } else if (s === 'ending') {
     btn(cx, H - 90, 240, 50, 'KEEP EXPLORING', () => { go('play'); G.bossDeath = null; });
