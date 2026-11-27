@@ -115,6 +115,9 @@ console.log('combat / bench / death / spikes checked');
 newGame({}); A.loadRoom('r2',1,13); { const p=A.G.p; p.x=6*T+16; p.y=14*T; A.step(1/60); ok(A.save.charms.includes('soul'),'Soul Lantern pickup failed'); A.save.equipped=['soul']; const foe=A.G.enemies[0]; if(foe){const before=p.soul; hurtEnemy(foe,1,1); ok(p.soul>before,'Soul Lantern bonus not applied');} A.go('pause'); A.go('charms'); A.render(); ok(A.state==='charms','charm menu failed'); }
 newGame({}); A.loadRoom('r1',4,13); { const p=A.G.p; p.x=5*T+16; p.y=14*T; p.ground=true; A.setK('up',1); A.step(1/60); A.setK('up',0); ok(A.save.stations.r1===true,'bench did not awaken waystone'); A.go('pause'); A.go('waystones'); A.render(); ok(A.state==='waystones','waystone menu failed'); }
 
+// Soul Lance unlock, Soul cost and enemy hit
+newGame({}); A.save.bosses.weaver=true; A.loadRoom('r10',1,13); { const G=A.G,p=G.p; p.x=20*T+16; p.y=14*T; A.step(1/60); ok(A.save.ab.lance && A.save.picks.lance,'Shade Lance reward did not unlock'); p.soul=66; G.enemies.length=0; const foe=Object.assign(newBody({}),{t:'c',x:p.x+150,y:p.y,w:28,h:20,hp:5,maxhp:5,soul:5,dir:-1,st:'idle',stT:4,flash:0,stun:0,home:{x:p.x+150,y:p.y},anim:0,dead:false}); G.enemies.push(foe); A.setK('skill',1); A.step(1/60); A.setK('skill',0); for(let i=0;i<30;i++) A.step(1/60); ok(p.soul===33,'Shade Lance did not spend 33 Soul: '+p.soul); ok(foe.hp<5,'Shade Lance did not damage enemy'); }
+
 // ---- 4. pickups ----
 newGame({}); A.loadRoom('r3', 1, 13);
 {

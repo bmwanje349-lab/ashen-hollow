@@ -61,6 +61,7 @@ function noise(d, vol, fq, hp) {
 }
 const SFX = {
   swing: () => { noise(0.12, 0.07, 3000, true); tone(420, 0.1, 'triangle', 0.025, -200); },
+  lance: () => { tone(220, 0.28, 'sawtooth', 0.05, 520); tone(880, 0.22, 'sine', 0.025, -360); noise(0.18, 0.04, 4200, true); },
   hit: () => { noise(0.1, 0.12, 1800); tone(180, 0.1, 'square', 0.04, -90); },
   clink: () => { tone(1400, 0.15, 'triangle', 0.05, -400); noise(0.06, 0.08, 4000, true); },
   jump: () => { tone(260, 0.12, 'sine', 0.04, 220); },
@@ -123,14 +124,14 @@ const STATION_NAMES = { r1:'Hollow Gate', r2:'Forgotten Crossroads', r4:'Mosswel
 /* ---------- save ---------- */
 const SAVE_KEY = 'ashenhollow_save_v1';
 function defaultSave() {
-  return { started: false, room: START.room, bx: START.tx, by: START.ty, ab: { dash: false, dj: false, edge: false }, cores: 0, maxhp: 5, sword: 0,
+  return { started: false, room: START.room, bx: START.tx, by: START.ty, ab: { dash: false, dj: false, edge: false, lance: false }, cores: 0, maxhp: 5, sword: 0,
     picks: {}, bosses: {}, broken: [], explored: { r1: 1 }, charms: [], equipped: [], stations: {}, deaths: 0, time: 0, muted: false, ended: false };
 }
 let save = defaultSave();
 function loadSave() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
-    if (s && typeof s === 'object' && s.room && ROOMS[s.room]) { save = Object.assign(defaultSave(), s); save.ab = Object.assign({ dash: false, dj: false, edge: false }, s.ab || {}); save.charms = Array.isArray(s.charms) ? s.charms.filter(k => CHARM_DEF[k]) : []; save.equipped = Array.isArray(s.equipped) ? s.equipped.filter(k => save.charms.includes(k)).slice(0, 2) : []; save.stations = s.stations && typeof s.stations === 'object' ? s.stations : {}; }
+    if (s && typeof s === 'object' && s.room && ROOMS[s.room]) { save = Object.assign(defaultSave(), s); save.ab = Object.assign({ dash: false, dj: false, edge: false, lance: false }, s.ab || {}); save.charms = Array.isArray(s.charms) ? s.charms.filter(k => CHARM_DEF[k]) : []; save.equipped = Array.isArray(s.equipped) ? s.equipped.filter(k => save.charms.includes(k)).slice(0, 2) : []; save.stations = s.stations && typeof s.stations === 'object' ? s.stations : {}; }
   } catch (e) {}
   muted = !!save.muted;
 }
@@ -138,7 +139,7 @@ function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save));
 function hasSave() { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); return !!(s && s.started); } catch (e) { return false; } }
 
 /* ---------- input ---------- */
-const inp = { left: 0, right: 0, up: 0, down: 0, jump: 0, atk: 0, dash: 0, heal: 0 };
+const inp = { left: 0, right: 0, up: 0, down: 0, jump: 0, atk: 0, dash: 0, heal: 0, skill: 0 };
 let pressed = {};
 function setK(k, v) { if (v && !inp[k]) pressed[k] = true; inp[k] = v ? 1 : 0; }
 const KM = {
@@ -147,5 +148,5 @@ const KM = {
   z: 'jump', Z: 'jump', ' ': 'jump', k: 'jump', K: 'jump',
   x: 'atk', X: 'atk', j: 'atk', J: 'atk',
   c: 'dash', C: 'dash', Shift: 'dash', l: 'dash', L: 'dash',
-  v: 'heal', V: 'heal', h: 'heal', H: 'heal',
+  v: 'heal', V: 'heal', h: 'heal', H: 'heal', f: 'skill', F: 'skill',
 };

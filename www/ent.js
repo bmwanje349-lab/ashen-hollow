@@ -106,7 +106,10 @@ function updProj(dt) {
     q.life -= dt; q.vy += q.g * dt; q.x += q.vx * dt; q.y += q.vy * dt;
     let kill = q.life <= 0 || q.x < -50 || q.x > G.W.w * T + 50 || q.y > G.W.h * T + 50;
     if (!kill && q.hitW && G.W.solid(Math.floor(q.x / T), Math.floor(q.y / T))) kill = true;
-    if (!kill) {
+    if (!kill && q.fromPlayer) {
+      for (const e of G.enemies) if (!e.dead && rectOv(q.x-q.r,q.y-q.r,q.r*2,q.r*2,e.x-e.w/2,e.y-e.h,e.w,e.h)) { hurtEnemy(e,q.dmg,Math.sign(q.vx)||1); kill=true; break; }
+      if (!kill && G.boss && !G.boss.dead && rectOv(q.x-q.r,q.y-q.r,q.r*2,q.r*2,G.boss.x-G.boss.w/2,G.boss.y-G.boss.h,G.boss.w,G.boss.h)) { hurtBoss(G.boss,q.dmg,Math.sign(q.vx)||1); kill=true; }
+    } else if (!kill) {
       let hit;
       if (q.kind === 'wave') hit = rectOv(p.x - 9, p.y - 42, 18, 42, q.x - q.r, q.y - q.h, q.r * 2, q.h);
       else hit = rectOv(p.x - 9, p.y - 42, 18, 42, q.x - q.r, q.y - q.r, q.r * 2, q.r * 2);

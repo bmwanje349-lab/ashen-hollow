@@ -107,6 +107,10 @@ function updPlayer(dt) {
     if (p.healT >= 0.85) { p.hp++; p.soul -= 33; p.healT = 0; sfx('heal'); spawnParts(p.x, p.y - 24, 16, '#fff6c8', 220, 0.8); }
   } else { p.healT = 0; p.noCtl = false; }
   /* attack */
+  if (pressed.skill && save.ab.lance && p.soul >= 33 && !p.noCtl && p.hurtT <= 0 && p.dashT <= 0) {
+    p.soul -= 33; G.proj.push({ x: p.x + p.face * 22, y: p.y - 27, vx: p.face * 650, vy: 0, g: 0, r: 11, life: 1.45, col: '#bceeff', dmg: 2, kind: 'orb', hitW: true, fromPlayer: true });
+    sfx('lance'); G.shake = Math.max(G.shake, 2); spawnParts(p.x + p.face * 18, p.y - 27, 7, '#bceeff', 170, 0.35);
+  }
   if ((pressed.atk || inp.atk) && p.atkT <= 0 && !p.noCtl && p.hurtT <= 0) {
     p.atkDir = inp.up ? 'u' : (inp.down && !p.ground) ? 'd' : 'f';
     p.atkDur = save.sword ? 0.26 : 0.32; p.atkT = p.atkDur; p.atkAge = 0; p.atkFace = p.face; p.hitSet = new Set(); sfx('swing');
@@ -143,7 +147,7 @@ function updPlayer(dt) {
   const items = G.room.picks.slice();
   if (G.room.reward && G.room.boss && save.bosses[G.room.boss.id]) items.push(G.room.reward);
   for (const it of items) {
-    if (save.picks[it.id]) continue;
+    if (save.picks[it.id] || (it.id === 'lance' && !save.bosses.weaver)) continue;
     if (Math.abs(p.x - (it.x * T + 16)) < 34 && Math.abs((p.y - 22) - ((it.y + 1) * T - 22)) < 40) collect(it);
   }
   /* boss trigger */
@@ -160,6 +164,7 @@ function collect(it) {
   else if (it.id === 'dash') { save.ab.dash = true; G.msg = { t: 5, a: 'SHADE DASH', b: 'Press C / DASH to burst forward. Cross the chasms.' }; }
   else if (it.id === 'dj') { save.ab.dj = true; G.msg = { t: 5, a: 'WISP WINGS', b: 'Jump again in mid-air. The high ledges are open.' }; }
   else if (it.id === 'edge') { save.sword = 1; G.msg = { t: 5, a: 'EDGE OF NIGHT', b: 'Your sword reaches farther, strikes harder and swings faster.' }; }
+  else if (it.id === 'lance') { save.ab.lance = true; G.msg = { t: 5, a: 'SHADE LANCE', b: 'Press F / LANCE to spend 33 Soul and fire a piercing bolt.' }; }
   else if (it.t === 'H') { save.maxhp++; G.p.maxhp = save.maxhp; G.p.hp = G.p.maxhp; G.msg = { t: 4, a: 'HEART CORE', b: 'Maximum health increased.' }; }
   G.p.soul = Math.min(99, G.p.soul + 0);
   sfx('pick'); G.shake = 4; spawnParts(it.x * T + 16, (it.y + 1) * T - 24, 30, '#fff6c8', 300, 1.2); persist();
