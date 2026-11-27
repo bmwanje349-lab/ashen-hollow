@@ -129,6 +129,10 @@ function music(dt,boss) {
   if(beat===15){mBar++;if(!boss&&mBar%2===0)noise(.16,.008,700,true);}
   mStep++;
 }
+function stopMusicPlayback() {
+  for(const track of MUSIC_TRACKS){track.volume=0;if(!track.paused)track.pause();}
+  mMusicTarget=-1;
+}
 
 /* ---------- relics & waystones ---------- */
 const CHARM_DEF = {

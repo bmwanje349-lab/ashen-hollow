@@ -235,6 +235,7 @@ function step(rdt) {
 /* ---------- ui ---------- */
 function btn(x, y, w, h, label, fn, o) { buttons.push(Object.assign({ x, y, w, h, label, fn }, o || {})); }
 function go(s) {
+  if(s!=='play' && typeof stopMusicPlayback==='function') stopMusicPlayback();
   state = s; buttons = [];
   const touch = document.getElementById('touch');
   if (touch) touch.classList.toggle('hide', s !== 'play');

@@ -50,6 +50,10 @@ jobs:
         run: cp android/app/build/outputs/apk/debug/app-debug.apk AshenHollow.apk
       - uses: actions/upload-artifact@v4
         with: { name: AshenHollow-apk, path: AshenHollow.apk }
+      - name: Point latest tag at this exact build
+        run: |
+          git tag --force latest "$GITHUB_SHA"
+          git push origin refs/tags/latest --force
       - name: Publish release (download the APK on your phone)
         uses: softprops/action-gh-release@v2
         with:
