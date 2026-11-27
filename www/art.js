@@ -281,9 +281,56 @@ function drawTiles(rm, Wd, cx, cy) {
   }
 }
 
+/* ---------- biome-specific foreground set dressing ---------- */
+function drawBiomeProps(rm,Wd) {
+  const zone=rm.zone;
+  for(let tx=3;tx<rm.w-2;tx+=7){
+    if(hash2(tx+rm.seed%97,zone+11)<.34)continue;
+    let surface=-1;
+    for(let ty=rm.h-2;ty>3;ty--){
+      const tile=Wd.t(tx,ty),above=Wd.t(tx,ty-1);
+      if((tile==='#'||tile==='W'||tile==='=')&&(above==='.'||above==='^'||above==='=')){surface=ty;break;}
+    }
+    if(surface<0)continue;
+    const x=tx*T+16,y=surface*T,scale=.72+hash2(tx+4,rm.seed%31)*.5;
+    if(zone===0){
+      const h=58*scale;
+      ctx.save();ctx.translate(x,y);ctx.globalAlpha=.72;
+      ctx.fillStyle='#111827';ctx.strokeStyle='#64718d';ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(-9,0);ctx.lineTo(-8,-h+12);ctx.lineTo(-15,-h+4);ctx.lineTo(0,-h-5);ctx.lineTo(15,-h+4);ctx.lineTo(8,-h+12);ctx.lineTo(9,0);ctx.closePath();ctx.fill();ctx.stroke();
+      ctx.fillStyle='#8290ad';ctx.fillRect(-14,-h+4,28,5);ctx.fillRect(-11,-h*.5,22,3);
+      glow(0,-h-10,34,'#9ab8ff',.18);ctx.fillStyle='#fff0c0';ctx.beginPath();ctx.arc(0,-h-8,3,0,7);ctx.fill();ctx.restore();
+    }else if(zone===1){
+      ctx.save();ctx.translate(x,y);const amount=2+(hash2(tx,rm.seed%23)*2|0);
+      for(let m=0;m<amount;m++){
+        const ox=(m-(amount-1)/2)*12*scale,hh=(18+hash2(tx+m,7)*16)*scale;
+        ctx.strokeStyle='#477b79';ctx.lineWidth=3*scale;ctx.beginPath();ctx.moveTo(ox,0);ctx.quadraticCurveTo(ox-2,-hh*.5,ox,-hh);ctx.stroke();
+        ctx.fillStyle=m%2?'#286a68':'#387e78';ctx.beginPath();ctx.ellipse(ox,-hh,9*scale,5*scale,0,Math.PI,0);ctx.fill();ctx.strokeStyle='#84e8d8';ctx.lineWidth=1;ctx.stroke();
+        glow(ox,-hh-2,22,'#6ef0dc',.17+.06*Math.sin(TM*2+m));
+      }
+      ctx.restore();
+    }else if(zone===2){
+      ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);
+      ctx.fillStyle='#160d0b';ctx.strokeStyle='#75402b';ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(-10,0);ctx.lineTo(-6,-22);ctx.lineTo(6,-22);ctx.lineTo(10,0);ctx.closePath();ctx.fill();ctx.stroke();
+      ctx.fillRect(-14,-27,28,5);ctx.fillRect(-9,-36,18,9);
+      const flicker=Math.sin(TM*16+tx)*3;
+      glow(0,-42,36,'#ff8b45',.24);
+      ctx.fillStyle='#ffb46c';ctx.beginPath();ctx.moveTo(0,-30);ctx.bezierCurveTo(-12,-45+flicker,-3,-56,0,-66+flicker);ctx.bezierCurveTo(10,-51,11,-43,0,-30);ctx.fill();
+      ctx.fillStyle='#fff0bb';ctx.beginPath();ctx.moveTo(0,-33);ctx.quadraticCurveTo(-5,-46,0,-53+flicker);ctx.quadraticCurveTo(6,-42,0,-33);ctx.fill();ctx.restore();
+    }else{
+      ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);
+      glow(0,-20,42,'#a78bff',.22);
+      const crystal=(ox,hh,w,col)=>{ctx.fillStyle=col;ctx.strokeStyle='rgba(224,210,255,.55)';ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(ox-w*.5,0);ctx.lineTo(ox-w*.42,-hh*.66);ctx.lineTo(ox,-hh);ctx.lineTo(ox+w*.4,-hh*.7);ctx.lineTo(ox+w*.5,0);ctx.closePath();ctx.fill();ctx.stroke();ctx.fillStyle='rgba(255,255,255,.22)';ctx.beginPath();ctx.moveTo(ox,-hh);ctx.lineTo(ox+w*.4,-hh*.7);ctx.lineTo(ox+w*.14,-hh*.18);ctx.closePath();ctx.fill();};
+      crystal(0,54,17,'#51418a');crystal(-13,34,12,'#382b6d');crystal(14,28,11,'#6652a8');ctx.restore();
+    }
+  }
+}
+
 /* ---------- decor ---------- */
 function drawDecor(rm, Wd) {
   const z = ZONES[rm.zone];
+  drawBiomeProps(rm, Wd);
   for (const b of rm.benches) {
     const x = b.x * T + 16, y = (b.y + 1) * T;
     glow(x, y - 30, 80, '#fff0c0', 0.25 + 0.05 * Math.sin(TM * 3));
