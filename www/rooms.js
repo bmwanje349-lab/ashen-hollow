@@ -6,7 +6,7 @@ function mkRoom(id, name, zone, gx, gy, w, h, fn) {
   const g = [];
   for (let y = 0; y < h; y++) g.push(new Array(w).fill('#'));
   let seed = 7; for (const c of id) seed = (seed * 31 + c.charCodeAt(0)) | 0;
-  const r = { id, name, zone, gx, gy, w, h, exits: [], ents: [], picks: [], benches: [], signs: [], lockTiles: [], boss: null, reward: null, seed };
+  const r = { id, name, zone, gx, gy, w, h, exits: [], ents: [], picks: [], benches: [], npcs: [], signs: [], lockTiles: [], boss: null, reward: null, seed };
   const fill = (x, y, ww, hh, c) => { for (let j = y; j < y + hh; j++) for (let i = x; i < x + ww; i++) if (g[j] && g[j][i] !== undefined) g[j][i] = c; };
   const o = {
     air: (x, y, ww, hh) => fill(x, y, ww, hh, '.'),
@@ -18,6 +18,7 @@ function mkRoom(id, name, zone, gx, gy, w, h, fn) {
     ent: (t, x, y) => r.ents.push({ t, x, y }),
     pick: (t, x, y, pid) => r.picks.push({ t, x, y, id: pid }),
     bench: (x, y) => r.benches.push({ x, y }),
+    npc: (id, x, y) => r.npcs.push({ id, x, y }),
     sign: (x, y, text) => r.signs.push({ x, y, text }),
     lock: (x, y, ww, hh) => { for (let j = y; j < y + hh; j++) for (let i = x; i < x + ww; i++) r.lockTiles.push([i, j]); },
     boss: (bid, x, floorRow, ceilRow, trig) => { r.boss = { id: bid, x, floorRow, ceilRow, trig }; },
@@ -50,6 +51,7 @@ mkRoom('r2', 'Forgotten Crossroads', 0, 1, 2, 52, 17, (o) => {
   o.plat(8, 11, 4); o.plat(14, 11, 4); o.plat(11, 8, 3);
   o.bench(18, 13);
   o.pick('C', 6, 13, 'charm_soul');
+  o.npc('mara', 26, 13);
   o.sign(40, 13, 'A ledge too high to reach. A gift of flight would carry you there.');
   o.sign(48, 13, 'Ahead: the Warden\'s Hall. Below: Mosswell.');
   o.ent('c', 10, 13); o.ent('f', 30, 5); o.ent('c', 32, 13); o.ent('c', 38, 13);
@@ -89,6 +91,7 @@ mkRoom('r6', 'Weeping Caverns', 1, 3, 3, 44, 17, (o) => {
   o.plat(12, 11, 4); o.plat(18, 8, 4); o.plat(26, 11, 4); o.plat(32, 8, 4);
   o.bench(5, 13);
   o.pick('C', 20, 13, 'charm_reach');
+  o.npc('oren', 8, 13);
   o.ent('f', 15, 6); o.ent('f', 30, 5); o.ent('s', 21, 13); o.ent('s', 35, 13); o.ent('c', 25, 13); o.ent('l', 39, 13);
 });
 mkRoom('r7', 'The Drip Hall', 1, 4, 3, 56, 17, (o) => {
@@ -131,6 +134,7 @@ mkRoom('r10', 'Ember Hall', 2, 2, 1, 48, 17, (o) => {
   o.bench(6, 13); o.bench(37, 13);
   o.pick('C', 8, 13, 'charm_ward');
   o.pick('A', 10, 13, 'lance');
+  o.npc('pilgrim', 40, 13);
   o.sign(34, 13, 'North: a duelist waits in a high chamber. East: the Hollow Throne.');
   o.ent('h', 14, 13); o.ent('l', 20, 13); o.ent('l', 28, 13); o.ent('f', 22, 5); o.ent('f', 31, 5); o.ent('s', 32, 13);
 });

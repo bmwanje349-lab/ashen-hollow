@@ -75,6 +75,7 @@ function drawWorld() {
   ctx.translate(-cx, -cy);
   drawTiles(rm, G.W, cx, cy);
   drawDecor(rm, G.W);
+  drawNPCs(rm);
   for (const e of G.enemies) drawEnemy(e);
   if (G.boss) drawBoss(G.boss);
   drawPlayer(p);

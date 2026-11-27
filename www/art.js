@@ -3,10 +3,12 @@
 let TM = 0;
 /* Generated artwork atlas: painted biomes, stone material and animated knight frames. */
 const GAME_ART = { worlds: null, knight: null, tilePattern: null };
+const NPC_ART = {};
 try {
   if (typeof Image !== 'undefined') {
     GAME_ART.worlds = new Image(); GAME_ART.worlds.src = 'assets/worlds.webp';
     GAME_ART.knight = new Image(); GAME_ART.knight.src = 'assets/knight.png';
+    for (const id of ['mara','oren','pilgrim']) { NPC_ART[id] = new Image(); NPC_ART[id].src = 'assets/npc-' + id + '.svg'; }
   }
 } catch (e) {}
 function drawKnightFrame(row, col, x, y, w, h, face, alpha) {
@@ -230,6 +232,14 @@ function drawDecor(rm, Wd) {
 }
 
 /* ---------- player ---------- */
+function drawNPCs(rm) {
+  for (const n of (rm.npcs || [])) {
+    const im = NPC_ART[n.id], x = n.x * T + 16, foot = (n.y + 1) * T, bob = Math.sin(TM * 1.55 + n.x) * 1.8;
+    if (im && im.complete && im.naturalWidth) { ctx.save(); ctx.globalAlpha = 0.98; ctx.drawImage(im, x - 38, foot - 94 + bob, 76, 94); ctx.restore(); }
+    const def = NPC_DEF[n.id]; if (def) glow(x + 20, foot - 45 + bob, 34, def.glow, 0.34);
+    if (G && G.p && Math.abs(G.p.x - x) < 54 && Math.abs(G.p.y - foot) < 62) { ctx.fillStyle='rgba(3,7,13,.82)'; roundRect(x-48,foot-112+bob,96,22,7); ctx.fill(); txt('UP  ·  SPEAK',x,foot-101+bob,11,'#f3e7c8','center'); }
+  }
+}
 function drawPlayer(p) {
   if (p.dead) return;
   const blink = p.inv > 0 && ((TM * 18) | 0) % 2 === 0;

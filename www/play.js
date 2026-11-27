@@ -138,7 +138,8 @@ function updPlayer(dt) {
   /* bench, sign, pickups */
   G.sign = null;
   for (const s of G.room.signs) if (Math.abs(p.x - (s.x * T + 16)) < 52 && Math.abs(p.y - (s.y + 1) * T) < 60) G.sign = s.text;
-  if (pressed.up && p.ground && !G.boss) for (const b of G.room.benches) {
+  const talked = pressed.up && p.ground && !G.boss && talkAtNPC(p);
+  if (pressed.up && !talked && p.ground && !G.boss) for (const b of G.room.benches) {
     if (Math.abs(p.x - (b.x * T + 16)) < 44 && Math.abs(p.y - (b.y + 1) * T) < 12) {
       p.hp = p.maxhp; save.room = G.room.id; save.bx = b.x; save.by = b.y; save.started = true; save.stations[G.room.id] = true; persist(); sfx('bench');
       G.enemies = []; G.proj = []; G.room.ents.forEach(e => spawnEnemy(e.t, e.x, e.y)); G.rest = 1.6; spawnParts(p.x, p.y - 30, 24, '#fff6c8', 200, 1.0); toast('Rested. Progress saved.');
@@ -157,6 +158,17 @@ function updPlayer(dt) {
   /* room exit */
   const ex = exitAt(G.room, p);
   if (ex && !G.trans) { sfx('door'); startTrans(() => { loadRoom(ex.to, ex.tx, ex.ty); }); }
+}
+function talkAtNPC(p) {
+  for (const n of (G.room.npcs || [])) {
+    if (Math.abs(p.x - (n.x * T + 16)) > 48 || Math.abs(p.y - (n.y + 1) * T) > 58) continue;
+    const d = NPC_DEF[n.id]; if (!d) continue;
+    const i = Math.min(save.dialogues[n.id] || 0, d.lines.length - 1);
+    G.msg = { t: 6, a: d.name, b: d.lines[i] };
+    save.dialogues[n.id] = Math.min(i + 1, d.lines.length - 1); persist(); sfx('pick');
+    return true;
+  }
+  return false;
 }
 function collect(it) {
   save.picks[it.id] = true;
