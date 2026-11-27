@@ -24,7 +24,7 @@ function newGame(ab) {
 function waitTrans() { let f = 0; while (A.G.trans && f++ < 200) A.step(1 / 60); }
 
 // ---- 1. every screen renders ----
-A.go('title'); A.render(); A.go('pause'); A.render(); A.go('map'); A.render(); A.go('title');
+A.go('title'); A.render(); A.go('pause'); A.render(); A.go('map'); A.render(); A.go('journal'); A.render(); ok(A.state==='journal','journal screen did not open'); A.go('pause'); A.go('title');
 newGame({ dash: true, dj: true });
 for (const id of Object.keys(A.ROOMS)) {
   A.loadRoom(id, A.ROOMS[id].exits[0].tx, A.ROOMS[id].exits[0].ty);
@@ -112,7 +112,7 @@ newGame({}); A.loadRoom('r1', 4, 13);
 }
 console.log('combat / bench / death / spikes checked');
 // relics and waystones
-newGame({}); A.loadRoom('r2',1,13); { const p=A.G.p; p.x=6*T+16; p.y=14*T; A.step(1/60); ok(A.save.charms.includes('soul'),'Soul Lantern pickup failed'); A.save.equipped=['soul']; const foe=A.G.enemies[0]; if(foe){const before=p.soul; hurtEnemy(foe,1,1); ok(p.soul>before,'Soul Lantern bonus not applied');} A.go('pause'); A.go('charms'); A.render(); ok(A.state==='charms','charm menu failed'); }
+newGame({}); A.loadRoom('r2',1,13); { const p=A.G.p; p.x=6*T+16; p.y=14*T; A.step(1/60); ok(A.save.charms.includes('soul'),'Soul Lantern pickup failed'); A.save.equipped=['soul']; const foe=A.G.enemies[0]; if(foe){const before=p.soul; hurtEnemy(foe,1,1); ok(p.soul>before,'Soul Lantern bonus not applied');} A.go('pause'); A.go('journal'); A.render(); ok(A.state==='journal','journal menu did not open'); A.go('charms'); A.render(); ok(A.state==='charms','charm menu failed'); }
 newGame({}); A.loadRoom('r1',4,13); { const p=A.G.p; p.x=5*T+16; p.y=14*T; p.ground=true; A.setK('up',1); A.step(1/60); A.setK('up',0); ok(A.save.stations.r1===true,'bench did not awaken waystone'); A.go('pause'); A.go('waystones'); A.render(); ok(A.state==='waystones','waystone menu failed'); }
 
 // Soul Lance unlock, Soul cost and enemy hit

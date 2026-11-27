@@ -246,14 +246,17 @@ function go(s) {
     btn(W - 56, 10, 46, 38, 'II', () => togglePause(), { fs: 18, hud: true });
     btn(W - 112, 10, 52, 38, 'MAP', () => go('map'), { fs: 13, hud: true });
   } else if (s === 'pause') {
-    btn(cx, 190, 240, 52, 'RESUME', () => go('play'));
-    btn(cx, 244, 240, 46, 'MAP', () => go('map'));
-    btn(cx, 296, 240, 46, 'CHARMS', () => go('charms'));
-    btn(cx, 348, 240, 46, 'WAYSTONES', () => go('waystones'));
-    btn(cx, 400, 240, 46, muted ? 'SOUND: OFF' : 'SOUND: ON', () => { muted = !muted; save.muted = muted; persist(); go('pause'); });
-    btn(cx, 452, 240, 42, 'SAVE & QUIT', () => { persist(); G = null; go('title'); });
+    btn(cx, 166, 240, 44, 'RESUME', () => go('play'));
+    btn(cx, 212, 240, 42, 'MAP', () => go('map'));
+    btn(cx, 256, 240, 42, 'JOURNAL', () => go('journal'));
+    btn(cx, 300, 240, 42, 'CHARMS', () => go('charms'));
+    btn(cx, 344, 240, 42, 'WAYSTONES', () => go('waystones'));
+    btn(cx, 388, 240, 42, muted ? 'SOUND: OFF' : 'SOUND: ON', () => { muted = !muted; save.muted = muted; persist(); go('pause'); });
+    btn(cx, 432, 240, 42, 'SAVE & QUIT', () => { persist(); G = null; go('title'); });
   } else if (s === 'map') {
     btn(W / 2 - 80, H - 58, 160, 42, 'CLOSE', () => go(G ? 'play' : 'title'), { fs: 18 });
+  } else if (s === 'journal') {
+    btn(W/2-100, 468, 200, 42, 'CLOSE JOURNAL', () => go('play'));
   } else if (s === 'charms') {
     save.charms.forEach((key, i) => { const on = save.equipped.includes(key); btn(W/2-205, 204+i*68, 410, 52, (on?'◆  ':'◇  ')+CHARM_DEF[key].name+(on?'  • BOUND':'  • EQUIP'), () => { if(save.equipped.includes(key)) save.equipped=save.equipped.filter(v=>v!==key); else if(save.equipped.length<2) save.equipped.push(key); else toast('Two charm slots. Unequip one first.'); persist(); go('charms'); }, { fs:16 }); });
     btn(W/2-100, 454, 200, 44, 'BACK', () => go('pause'));
@@ -265,8 +268,20 @@ function go(s) {
     btn(cx, H - 90, 240, 50, 'KEEP EXPLORING', () => { go('play'); G.bossDeath = null; });
   }
 }
+function journalObjective() {
+  if (save.ended) return { title:'The Crown Is Silent', detail:'The Hollow Sovereign has fallen. The old roads are open; the kingdom is yours to remember.' };
+  if (!save.ab.dash) return { title:'Find the Hollow Warden', detail:'The Warden guards the old crossing. Defeat it to claim the Shade Dash and reach the broken roads.' };
+  if (!save.ab.dj) return { title:'Follow the Weeping Bells', detail:'The Drowned Chapel lies beyond the Sundered Chasm. The Weaver keeps the Wisp Wings.' };
+  if (!save.sword) return { title:'Seek the Ashen Duelist', detail:'A high chamber branches from Ember Hall. The Duelist holds the Edge of Night.' };
+  if (!save.bosses.sovereign) return { title:'Enter the Hollow Throne', detail:'The last sovereign waits beyond Ember Hall. Rest at the old waystones before you cross the threshold.' };
+  return { title:'Walk the Old Roads', detail:'Explore forgotten chambers, speak with those who remain and uncover the relics left behind.' };
+}
+function journalObjectiveStatus() {
+  const steps=[['The Hollow Warden',!!save.bosses.warden],['The Weeping Weaver',!!save.bosses.weaver],['The Ashen Duelist',!!save.bosses.duelist],['The Hollow Sovereign',!!save.bosses.sovereign]];
+  return steps;
+}
 function travelTo(id) { const rm=ROOMS[id], b=rm && rm.benches[0]; if(!b || !save.stations[id]) return; save.room=id; save.bx=b.x; save.by=b.y; persist(); loadRoom(id,b.x,b.y); G.p.hp=G.p.maxhp; G.p.soul=0; go('play'); toast('Waystone: '+(STATION_NAMES[id]||rm.name)); sfx('door'); }
-function togglePause() { if (state === 'play') go('pause'); else if (state === 'pause' || state === 'map' || state === 'charms' || state === 'waystones') go('play'); }
+function togglePause() { if (state === 'play') go('pause'); else if (state === 'pause' || state === 'map' || state === 'charms' || state === 'waystones' || state === 'journal') go('play'); }
 function tryFullscreen() { try { const el = document.documentElement; if (!document.fullscreenElement && el.requestFullscreen) { const r = el.requestFullscreen(); if (r && r.catch) r.catch(() => {}); } } catch (e) {} }
 
 addEventListener('keydown', e => {
@@ -274,6 +289,7 @@ addEventListener('keydown', e => {
   if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') { togglePause(); return; }
   if (e.key === 'm' || e.key === 'M') { if (state === 'play') go('map'); else if (state === 'map') go('play'); return; }
   if (e.key === 'i' || e.key === 'I') { if (state === 'play' || state === 'pause') go('charms'); else if (state === 'charms') go('play'); return; }
+  if (e.key === 'q' || e.key === 'Q') { if (state === 'play' || state === 'pause') go('journal'); else if (state === 'journal') go('play'); return; }
   if (e.key === 't' || e.key === 'T') { if (state === 'play' || state === 'pause') go('waystones'); else if (state === 'waystones') go('play'); return; }
   if (e.key === 'Enter' && state === 'title' && buttons[0]) { buttons[0].fn(); return; }
   const k = KM[e.key];

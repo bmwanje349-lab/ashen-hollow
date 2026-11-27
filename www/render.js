@@ -215,6 +215,33 @@ function drawCharms() {
   if(!save.charms.length) txt('No relics found yet. Search the forgotten paths.',W/2,280,20,'#c5cce0','center');
   save.charms.forEach((key,i)=>{const y=208+i*68,c=CHARM_DEF[key],active=save.equipped.includes(key);ctx.fillStyle=active?'rgba(73,83,119,.36)':'rgba(14,18,31,.8)';ctx.strokeStyle=active?c.tint:'#414c69';ctx.lineWidth=1.5;roundRect(190,y-24,580,52,9);ctx.fill();ctx.stroke();txt(c.mark,222,y+1,26,c.tint,'center');txt(c.name,254,y-8,18,'#f1f3ff');txt(c.lore,254,y+13,13,'#aeb8d0');txt(active?'BOUND':'AVAILABLE',730,y+1,12,active?c.tint:'#8794b3','right');});drawButtons();
 }
+function drawJournal() {
+  ctx.fillStyle='#070a12';ctx.fillRect(0,0,W,H);
+  const wash=ctx.createLinearGradient(0,0,W,H);wash.addColorStop(0,'rgba(18,29,49,.76)');wash.addColorStop(.55,'rgba(6,10,19,.96)');wash.addColorStop(1,'rgba(25,16,26,.8)');
+  ctx.fillStyle=wash;ctx.fillRect(0,0,W,H);
+  glow(145,120,240,'#8aa7d3',.11);glow(820,410,230,'#d0a879',.08);
+  ctx.strokeStyle='rgba(178,157,119,.72)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(54,28);ctx.lineTo(W-54,28);ctx.moveTo(54,H-30);ctx.lineTo(W-54,H-30);ctx.stroke();
+  txt('FIELD JOURNAL',W/2,55,32,'#f1e8d3','center');
+  txt('THE ASHEN KINGDOM  /  SURVEY No. 07',W/2,84,12,'#9aa8bf','center');
+  ctx.fillStyle='rgba(8,13,23,.84)';ctx.strokeStyle='rgba(142,156,183,.55)';ctx.lineWidth=1.4;roundRect(76,112,808,330,12);ctx.fill();ctx.stroke();
+  ctx.strokeStyle='rgba(202,177,126,.32)';ctx.beginPath();ctx.moveTo(490,132);ctx.lineTo(490,424);ctx.stroke();
+  const objective=journalObjective();txt('CURRENT THREAD',112,142,13,'#bcae8f');
+  txt(objective.title,112,177,24,'#f0eadc');
+  const wrap=(text,x,y,max,lh,color,size)=>{ctx.font='16px Georgia';ctx.fillStyle=color;ctx.textAlign='left';ctx.textBaseline='top';const words=text.split(' ');let line='',yy=y;for(const word of words){const next=line?line+' '+word:word;if(ctx.measureText(next).width>max&&line){ctx.fillText(line,x,yy);line=word;yy+=lh;}else line=next;}if(line)ctx.fillText(line,x,yy);};
+  wrap(objective.detail,112,205,334,22,'#b4bfd2',16);
+  ctx.strokeStyle='rgba(199,178,139,.27)';ctx.beginPath();ctx.moveTo(112,286);ctx.lineTo(456,286);ctx.stroke();
+  txt('ABILITIES RECOVERED',112,310,13,'#bcae8f');
+  const abilities=[['SHADE DASH',save.ab.dash],['WISP WINGS',save.ab.dj],['SHADE LANCE',save.ab.lance],['EDGE OF NIGHT',!!save.sword]];
+  abilities.forEach((it,i)=>{const col=i%2,row=Math.floor(i/2),x=112+col*170,y=340+row*34;txt((it[1]?'◆':'◇')+'  '+it[0],x,y,13,it[1]?'#d8d0ae':'#69778e');});
+  txt('RELICS',112,407,12,'#bcae8f');txt(save.charms.length?save.charms.map(k=>CHARM_DEF[k].name).join('  ·  '):'None recovered',176,407,13,'#bbc6d7');
+  txt('THE FOUR OATHS',520,142,13,'#bcae8f');
+  const bosses=journalObjectiveStatus();
+  bosses.forEach((b,i)=>{const y=181+i*53,done=b[1];ctx.fillStyle=done?'rgba(129,151,133,.18)':'rgba(43,51,70,.26)';ctx.strokeStyle=done?'rgba(166,196,158,.48)':'rgba(112,129,158,.35)';roundRect(520,y-16,330,40,7);ctx.fill();ctx.stroke();txt(done?'✓':'◇',542,y+4,19,done?'#c5deb8':'#78849b','center');txt(b[0],566,y+4,16,done?'#dbe4d4':'#aab5ca');txt(done?'FALLEN':'UNBROKEN',830,y+4,10,done?'#abc7a4':'#77839b','right');});
+  txt('WITNESSES',520,411,12,'#bcae8f');
+  const npcs=[['MARA',save.dialogues.mara>0],['OREN',save.dialogues.oren>0],['PILGRIM',save.dialogues.pilgrim>0]];
+  npcs.forEach((n,i)=>txt((n[1]?'◆ ':'◇ ')+n[0],618+i*82,411,11,n[1]?'#d8cda9':'#77839b','left'));
+  drawButtons();
+}
 function drawWaystones() { ctx.fillStyle='rgba(2,4,10,.94)';ctx.fillRect(0,0,W,H);glow(W/2,90,300,'#e6d3a3',.12);txt('WAYSTONES',W/2,58,34,'#f4e8c9','center');txt('Rest at a stone bench to awaken its station',W/2,96,16,'#b8b1a1','center','italic');if(!Object.keys(save.stations||{}).some(id=>save.stations[id]))txt('No stations awakened yet.',W/2,250,20,'#c5cce0','center');drawButtons(); }
 function drawButtons() {
   for (const b of buttons) {
@@ -275,6 +302,7 @@ function render() {
   else if (state === 'ending') drawEnding();
   else if (state === 'charms') drawCharms();
   else if (state === 'waystones') drawWaystones();
+  else if (state === 'journal') drawJournal();
   else if (G) {
     drawWorld(); drawHUD();
     if (state === 'play') drawButtons();
