@@ -290,7 +290,6 @@ function drawEnemy(e) {
     ctx.restore(); return;
   }
   const body = fl ? '#ffffff' : '#090b12', rim = fl ? '#ffffff' : '#46557a';
-  const dir = e.t === 'f' ? (e.vx < -5 ? -1 : 1) : (e.dir || 1);
   ctx.scale(dir, 1); ctx.lineWidth = 1.6; ctx.fillStyle = body; ctx.strokeStyle = rim;
   const eye = (x, y, c, r) => { glow(x, y, 16, c, 0.5); ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x, y, r || 2.4, 0, 7); ctx.fill(); ctx.fillStyle = body; };
   if (e.t === 'c') {
