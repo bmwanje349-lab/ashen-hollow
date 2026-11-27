@@ -99,17 +99,24 @@ function music(dt, boss) {
   mStep++;
 }
 
+/* ---------- relics & waystones ---------- */
+const CHARM_DEF = {
+  soul: { name: 'Soul Lantern', mark: '✧', lore: 'Striking foes gathers 50% more Soul.', tint: '#9fe8e0' },
+  reach: { name: 'Grave Needle', mark: '†', lore: 'Your nail reaches farther into the dark.', tint: '#d8d4ff' },
+  ward: { name: 'Ashen Ward', mark: '◇', lore: 'A 1-in-4 chance to turn a hit aside.', tint: '#f4d39a' },
+};
+const STATION_NAMES = { r1:'Hollow Gate', r2:'Forgotten Crossroads', r4:'Mosswell', r5:'Sundered Chasm', r6:'Weeping Caverns', r8:'Drowned Chapel', r9:'Spire Ascent', r10:'Ember Hall', r11:'Hollow Throne', r12:"Duelist's Rest" };
 /* ---------- save ---------- */
 const SAVE_KEY = 'ashenhollow_save_v1';
 function defaultSave() {
   return { started: false, room: START.room, bx: START.tx, by: START.ty, ab: { dash: false, dj: false, edge: false }, cores: 0, maxhp: 5, sword: 0,
-    picks: {}, bosses: {}, broken: [], explored: { r1: 1 }, deaths: 0, time: 0, muted: false, ended: false };
+    picks: {}, bosses: {}, broken: [], explored: { r1: 1 }, charms: [], equipped: [], stations: {}, deaths: 0, time: 0, muted: false, ended: false };
 }
 let save = defaultSave();
 function loadSave() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
-    if (s && typeof s === 'object' && s.room && ROOMS[s.room]) { save = Object.assign(defaultSave(), s); save.ab = Object.assign({ dash: false, dj: false, edge: false }, s.ab || {}); }
+    if (s && typeof s === 'object' && s.room && ROOMS[s.room]) { save = Object.assign(defaultSave(), s); save.ab = Object.assign({ dash: false, dj: false, edge: false }, s.ab || {}); save.charms = Array.isArray(s.charms) ? s.charms.filter(k => CHARM_DEF[k]) : []; save.equipped = Array.isArray(s.equipped) ? s.equipped.filter(k => save.charms.includes(k)).slice(0, 2) : []; save.stations = s.stations && typeof s.stations === 'object' ? s.stations : {}; }
   } catch (e) {}
   muted = !!save.muted;
 }

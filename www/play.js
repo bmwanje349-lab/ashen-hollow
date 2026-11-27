@@ -37,6 +37,7 @@ function startTrans(fn) { if (!G.trans) G.trans = { t: 0, phase: 0, fn }; }
 function hurtPlayer(dmg, srcX) {
   const p = G.p;
   if (p.inv > 0 || p.dead) return;
+  if (save.equipped.includes('ward') && Math.random() < 0.25) { p.inv = 0.28; sfx('clink'); spawnParts(p.x, p.y - 24, 8, '#f4d39a', 180, 0.45); toast('ASHEN WARD'); return; }
   p.hp -= dmg; p.inv = 1.4; p.hurtT = 0.28; p.healT = 0; p.dashT = 0;
   p.vx = sg(p.x - srcX) * 330; p.vy = -340; p.ground = false;
   G.hitstop = Math.max(G.hitstop, 0.1); G.shake = Math.max(G.shake, 12);
@@ -57,7 +58,7 @@ function respawn() {
 
 /* ---------- sword ---------- */
 function slashRect(p) {
-  const reach = 80 + (save.sword ? 22 : 0);
+  const reach = 80 + (save.sword ? 22 : 0) + (save.equipped.includes('reach') ? 30 : 0);
   if (p.atkDir === 'u') return { x: p.x - 32, y: p.y - 46 - 72, w: 64, h: 72 + 20 };
   if (p.atkDir === 'd') return { x: p.x - 32, y: p.y - 6, w: 64, h: 66 };
   return { x: p.atkFace > 0 ? p.x + 4 : p.x - 4 - reach, y: p.y - 56, w: reach, h: 54 };
@@ -135,7 +136,7 @@ function updPlayer(dt) {
   for (const s of G.room.signs) if (Math.abs(p.x - (s.x * T + 16)) < 52 && Math.abs(p.y - (s.y + 1) * T) < 60) G.sign = s.text;
   if (pressed.up && p.ground && !G.boss) for (const b of G.room.benches) {
     if (Math.abs(p.x - (b.x * T + 16)) < 44 && Math.abs(p.y - (b.y + 1) * T) < 12) {
-      p.hp = p.maxhp; save.room = G.room.id; save.bx = b.x; save.by = b.y; save.started = true; persist(); sfx('bench');
+      p.hp = p.maxhp; save.room = G.room.id; save.bx = b.x; save.by = b.y; save.started = true; save.stations[G.room.id] = true; persist(); sfx('bench');
       G.enemies = []; G.proj = []; G.room.ents.forEach(e => spawnEnemy(e.t, e.x, e.y)); G.rest = 1.6; spawnParts(p.x, p.y - 30, 24, '#fff6c8', 200, 1.0); toast('Rested. Progress saved.');
     }
   }
@@ -155,10 +156,11 @@ function updPlayer(dt) {
 }
 function collect(it) {
   save.picks[it.id] = true;
-  if (it.id === 'dash') { save.ab.dash = true; G.msg = { t: 5, a: 'SHADE DASH', b: 'Press C / DASH to burst forward. Cross the chasms.' }; }
+  if (it.id.startsWith('charm_')) { const key = it.id.slice(6); if (CHARM_DEF[key] && !save.charms.includes(key)) save.charms.push(key); G.msg = { t: 5, a: CHARM_DEF[key].name.toUpperCase(), b: CHARM_DEF[key].lore }; }
+  else if (it.id === 'dash') { save.ab.dash = true; G.msg = { t: 5, a: 'SHADE DASH', b: 'Press C / DASH to burst forward. Cross the chasms.' }; }
   else if (it.id === 'dj') { save.ab.dj = true; G.msg = { t: 5, a: 'WISP WINGS', b: 'Jump again in mid-air. The high ledges are open.' }; }
   else if (it.id === 'edge') { save.sword = 1; G.msg = { t: 5, a: 'EDGE OF NIGHT', b: 'Your sword reaches farther, strikes harder and swings faster.' }; }
-  else { save.maxhp++; G.p.maxhp = save.maxhp; G.p.hp = G.p.maxhp; G.msg = { t: 4, a: 'HEART CORE', b: 'Maximum health increased.' }; }
+  else if (it.t === 'H') { save.maxhp++; G.p.maxhp = save.maxhp; G.p.hp = G.p.maxhp; G.msg = { t: 4, a: 'HEART CORE', b: 'Maximum health increased.' }; }
   G.p.soul = Math.min(99, G.p.soul + 0);
   sfx('pick'); G.shake = 4; spawnParts(it.x * T + 16, (it.y + 1) * T - 24, 30, '#fff6c8', 300, 1.2); persist();
 }
@@ -226,22 +228,34 @@ function go(s) {
     btn(W - 112, 10, 52, 38, 'MAP', () => go('map'), { fs: 13, hud: true });
   } else if (s === 'pause') {
     btn(cx, 190, 240, 52, 'RESUME', () => go('play'));
-    btn(cx, 252, 240, 48, 'MAP', () => go('map'));
-    btn(cx, 310, 240, 48, muted ? 'SOUND: OFF' : 'SOUND: ON', () => { muted = !muted; save.muted = muted; persist(); go('pause'); });
-    btn(cx, 368, 240, 48, 'SAVE & QUIT', () => { persist(); G = null; go('title'); });
+    btn(cx, 244, 240, 46, 'MAP', () => go('map'));
+    btn(cx, 296, 240, 46, 'CHARMS', () => go('charms'));
+    btn(cx, 348, 240, 46, 'WAYSTONES', () => go('waystones'));
+    btn(cx, 400, 240, 46, muted ? 'SOUND: OFF' : 'SOUND: ON', () => { muted = !muted; save.muted = muted; persist(); go('pause'); });
+    btn(cx, 452, 240, 42, 'SAVE & QUIT', () => { persist(); G = null; go('title'); });
   } else if (s === 'map') {
     btn(W / 2 - 80, H - 58, 160, 42, 'CLOSE', () => go(G ? 'play' : 'title'), { fs: 18 });
+  } else if (s === 'charms') {
+    save.charms.forEach((key, i) => { const on = save.equipped.includes(key); btn(W/2-205, 204+i*68, 410, 52, (on?'◆  ':'◇  ')+CHARM_DEF[key].name+(on?'  • BOUND':'  • EQUIP'), () => { if(save.equipped.includes(key)) save.equipped=save.equipped.filter(v=>v!==key); else if(save.equipped.length<2) save.equipped.push(key); else toast('Two charm slots. Unequip one first.'); persist(); go('charms'); }, { fs:16 }); });
+    btn(W/2-100, 454, 200, 44, 'BACK', () => go('pause'));
+  } else if (s === 'waystones') {
+    const ids = Object.keys(save.stations).filter(id => save.stations[id] && ROOMS[id]);
+    ids.forEach((id,i) => { const col=i%2, row=Math.floor(i/2); btn(W/2-310+col*320, 150+row*64, 300, 52, STATION_NAMES[id] || ROOMS[id].name, () => travelTo(id), { fs:15 }); });
+    btn(W/2-100, 464, 200, 42, 'BACK', () => go('pause'));
   } else if (s === 'ending') {
     btn(cx, H - 90, 240, 50, 'KEEP EXPLORING', () => { go('play'); G.bossDeath = null; });
   }
 }
-function togglePause() { if (state === 'play') go('pause'); else if (state === 'pause' || state === 'map') go('play'); }
+function travelTo(id) { const rm=ROOMS[id], b=rm && rm.benches[0]; if(!b || !save.stations[id]) return; save.room=id; save.bx=b.x; save.by=b.y; persist(); loadRoom(id,b.x,b.y); G.p.hp=G.p.maxhp; G.p.soul=0; go('play'); toast('Waystone: '+(STATION_NAMES[id]||rm.name)); sfx('door'); }
+function togglePause() { if (state === 'play') go('pause'); else if (state === 'pause' || state === 'map' || state === 'charms' || state === 'waystones') go('play'); }
 function tryFullscreen() { try { const el = document.documentElement; if (!document.fullscreenElement && el.requestFullscreen) { const r = el.requestFullscreen(); if (r && r.catch) r.catch(() => {}); } } catch (e) {} }
 
 addEventListener('keydown', e => {
   audioInit();
   if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') { togglePause(); return; }
   if (e.key === 'm' || e.key === 'M') { if (state === 'play') go('map'); else if (state === 'map') go('play'); return; }
+  if (e.key === 'i' || e.key === 'I') { if (state === 'play' || state === 'pause') go('charms'); else if (state === 'charms') go('play'); return; }
+  if (e.key === 't' || e.key === 'T') { if (state === 'play' || state === 'pause') go('waystones'); else if (state === 'waystones') go('play'); return; }
   if (e.key === 'Enter' && state === 'title' && buttons[0]) { buttons[0].fn(); return; }
   const k = KM[e.key];
   if (k) { setK(k, 1); e.preventDefault(); }

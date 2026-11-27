@@ -111,6 +111,9 @@ newGame({}); A.loadRoom('r1', 4, 13);
   ok(p.hp === hp0 - 1, 'spikes did not hurt'); ok(p.x < 22 * T + 5 || p.x > 26 * T, 'spike respawn point is still in the pit x=' + p.x.toFixed(0));
 }
 console.log('combat / bench / death / spikes checked');
+// relics and waystones
+newGame({}); A.loadRoom('r2',1,13); { const p=A.G.p; p.x=6*T+16; p.y=14*T; A.step(1/60); ok(A.save.charms.includes('soul'),'Soul Lantern pickup failed'); A.save.equipped=['soul']; const foe=A.G.enemies[0]; if(foe){const before=p.soul; hurtEnemy(foe,1,1); ok(p.soul>before,'Soul Lantern bonus not applied');} A.go('pause'); A.go('charms'); A.render(); ok(A.state==='charms','charm menu failed'); }
+newGame({}); A.loadRoom('r1',4,13); { const p=A.G.p; p.x=5*T+16; p.y=14*T; p.ground=true; A.setK('up',1); A.step(1/60); A.setK('up',0); ok(A.save.stations.r1===true,'bench did not awaken waystone'); A.go('pause'); A.go('waystones'); A.render(); ok(A.state==='waystones','waystone menu failed'); }
 
 // ---- 4. pickups ----
 newGame({}); A.loadRoom('r3', 1, 13);

@@ -152,12 +152,21 @@ function drawMap() {
       if (r.boss && !save.bosses[r.boss.id]) txt('✦', x + (cw - 10) / 2, y + (ch - 10) / 2, 18, '#ff8a6a', 'center');
     } else txt('?', x + (cw - 10) / 2, y + (ch - 10) / 2, 20, '#56627f', 'center');
   }
+  for (const id of Object.keys(save.stations || {})) if (save.stations[id] && ROOMS[id]) { const r=ROOMS[id], x=ox+r.gx*cw+cw/2-5, y=oy+r.gy*ch+ch/2-5; ctx.fillStyle='#fff0c0'; glow(x,y,13,'#fff0c0',0.5); ctx.beginPath(); ctx.moveTo(x,y-5); ctx.lineTo(x+5,y); ctx.lineTo(x,y+5); ctx.lineTo(x-5,y); ctx.closePath(); ctx.fill(); }
   if (G) { const r = G.room, x = ox + r.gx * cw + 8 + (G.p.x / (r.w * T)) * (cw - 26), y = oy + r.gy * ch + 8 + (G.p.y / (r.h * T)) * (ch - 26); ctx.fillStyle = '#ffffff'; glow(x, y, 16, '#ffffff', 0.7); ctx.beginPath(); ctx.arc(x, y, 4.5, 0, 7); ctx.fill(); }
   txt('white dot: you     yellow: bench     red star: unfought boss', W / 2, H - 78, 14, '#8896b8', 'center');
   drawButtons();
 }
 
 /* ---------- screens ---------- */
+function drawCharms() {
+  ctx.fillStyle='rgba(2,4,10,0.94)'; ctx.fillRect(0,0,W,H); glow(W/2,100,280,'#8f9ecb',0.14);
+  txt('RELICS OF THE HOLLOW',W/2,58,32,'#f2f0ff','center'); txt('Bind two charms to shape your journey',W/2,98,16,'#9da9c8','center','italic');
+  for(let i=0;i<2;i++){const key=save.equipped[i],x=W/2-150+i*300;ctx.fillStyle='rgba(20,24,39,.8)';ctx.strokeStyle='#7f8cad';ctx.lineWidth=2;roundRect(x-92,126,184,48,10);ctx.fill();ctx.stroke();txt(key?CHARM_DEF[key].name:'EMPTY SLOT',x,150,14,key?CHARM_DEF[key].tint:'#67738e','center');}
+  if(!save.charms.length) txt('No relics found yet. Search the forgotten paths.',W/2,280,20,'#c5cce0','center');
+  save.charms.forEach((key,i)=>{const y=208+i*68,c=CHARM_DEF[key],active=save.equipped.includes(key);ctx.fillStyle=active?'rgba(73,83,119,.36)':'rgba(14,18,31,.8)';ctx.strokeStyle=active?c.tint:'#414c69';ctx.lineWidth=1.5;roundRect(190,y-24,580,52,9);ctx.fill();ctx.stroke();txt(c.mark,222,y+1,26,c.tint,'center');txt(c.name,254,y-8,18,'#f1f3ff');txt(c.lore,254,y+13,13,'#aeb8d0');txt(active?'BOUND':'AVAILABLE',730,y+1,12,active?c.tint:'#8794b3','right');});drawButtons();
+}
+function drawWaystones() { ctx.fillStyle='rgba(2,4,10,.94)';ctx.fillRect(0,0,W,H);glow(W/2,90,300,'#e6d3a3',.12);txt('WAYSTONES',W/2,58,34,'#f4e8c9','center');txt('Rest at a stone bench to awaken its station',W/2,96,16,'#b8b1a1','center','italic');if(!Object.keys(save.stations||{}).some(id=>save.stations[id]))txt('No stations awakened yet.',W/2,250,20,'#c5cce0','center');drawButtons(); }
 function drawButtons() {
   for (const b of buttons) {
     roundRect(b.x, b.y, b.w, b.h, 8);
@@ -202,6 +211,8 @@ function render() {
   if (state === 'title') drawTitle();
   else if (state === 'map') drawMap();
   else if (state === 'ending') drawEnding();
+  else if (state === 'charms') drawCharms();
+  else if (state === 'waystones') drawWaystones();
   else if (G) {
     drawWorld(); drawHUD();
     if (state === 'play') drawButtons();

@@ -170,6 +170,7 @@ function drawDecor(rm, Wd) {
     ctx.save(); ctx.translate(x, y); ctx.fillStyle = '#fff6d8'; ctx.strokeStyle = '#ffe9a8'; ctx.lineWidth = 2;
     if (it.t === 'H') { ctx.beginPath(); ctx.moveTo(0, 12); ctx.bezierCurveTo(-18, -2, -12, -16, 0, -6); ctx.bezierCurveTo(12, -16, 18, -2, 0, 12); ctx.fill(); }
     else if (it.t === 'D') { ctx.beginPath(); ctx.moveTo(-14, 10); ctx.lineTo(10, -2); ctx.lineTo(-14, -10); ctx.lineTo(-6, 0); ctx.closePath(); ctx.fill(); ctx.beginPath(); ctx.moveTo(14, 10); ctx.lineTo(18, 0); ctx.lineTo(14, -10); ctx.stroke(); }
+    else if (it.t === 'C') { ctx.rotate(TM * 0.35); ctx.strokeStyle = '#d8d4ff'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(0,-17); ctx.lineTo(0,17); ctx.moveTo(-12,-9); ctx.lineTo(12,9); ctx.moveTo(12,-9); ctx.lineTo(-12,9); ctx.stroke(); ctx.beginPath(); ctx.arc(0,0,13,0,7); ctx.stroke(); }
     else if (it.t === 'J') { ctx.beginPath(); ctx.moveTo(0, 12); ctx.quadraticCurveTo(-24, 0, -16, -14); ctx.quadraticCurveTo(-8, -4, 0, -2); ctx.quadraticCurveTo(8, -4, 16, -14); ctx.quadraticCurveTo(24, 0, 0, 12); ctx.fill(); }
     else { ctx.rotate(-0.8); ctx.fillRect(-2, -18, 4, 30); ctx.fillRect(-9, 8, 18, 3); ctx.fillRect(-2, 11, 4, 8); }
     ctx.restore();
