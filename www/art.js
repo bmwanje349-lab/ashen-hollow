@@ -299,7 +299,13 @@ function drawDecor(rm, Wd) {
 function drawNPCs(rm) {
   for (const n of (rm.npcs || [])) {
     const im = NPC_ART[n.id], x = n.x * T + 16, foot = (n.y + 1) * T, bob = Math.sin(TM * 1.55 + n.x) * 1.8;
-    if (im && im.complete && im.naturalWidth) { ctx.save(); ctx.globalAlpha = 0.98; ctx.drawImage(im, x - 38, foot - 94 + bob, 76, 94); ctx.restore(); }
+    if (im && im.complete && im.naturalWidth) {
+      const breathe = Math.sin(TM * 1.8 + n.x * 0.7) * 0.012;
+      const sway = Math.sin(TM * 0.72 + n.x) * 0.018;
+      ctx.save(); ctx.globalAlpha = 0.98; ctx.translate(x, foot + bob); ctx.rotate(sway);
+      ctx.translate(0, -47); ctx.scale(1 - breathe * 0.4, 1 + breathe); ctx.translate(0, 47);
+      ctx.imageSmoothingEnabled = true; ctx.drawImage(im, -38, -94, 76, 94); ctx.restore();
+    }
     const def = NPC_DEF[n.id]; if (def) glow(x + 20, foot - 45 + bob, 34, def.glow, 0.34);
     if (G && G.p && Math.abs(G.p.x - x) < 54 && Math.abs(G.p.y - foot) < 62) { ctx.fillStyle='rgba(3,7,13,.82)'; roundRect(x-48,foot-112+bob,96,22,7); ctx.fill(); txt('UP  ·  SPEAK',x,foot-101+bob,11,'#f3e7c8','center'); }
   }
@@ -350,7 +356,13 @@ function drawEnemy(e) {
     ctx.scale(dir,1);
     const bob = e.t === 'f' ? Math.sin(e.anim * 6) * 3 : Math.sin(e.anim * 5) * 1.3;
     const w = Math.max(48,e.w*1.95), h = Math.max(54,e.h*1.9);
-    ctx.translate(0,bob);
+    let sx = 1, sy = 1, tilt = 0;
+    if (e.t === 'c') { const pulse = Math.sin(e.anim * 9); sx = 1 + pulse * 0.055; sy = 1 - pulse * 0.045; }
+    else if (e.t === 'f') { tilt = e.st === 'swoop' ? clamp(e.vy / 1500, -0.34, 0.34) : Math.sin(e.anim * 2) * 0.035; sx = e.st === 'wind' ? 0.9 : 1.04; }
+    else if (e.t === 'h') { if (e.st === 'wind') { sx = 1.04; sy = 0.84 + Math.sin(e.anim * 24) * 0.035; } else if (e.st === 'charge') { sx = 1.13; sy = 0.92; tilt = -e.dir * 0.07; } else if (e.st === 'rest') { sy = 0.94; } }
+    else if (e.t === 's') { const recoil = e.stT > 2.05 ? 1 : 0; sx = 1 + recoil * 0.07; sy = 1 - recoil * 0.06; }
+    else if (e.t === 'l' && !e.ground) { sx = 1.08; sy = 0.9; tilt = e.dir * 0.06; }
+    ctx.translate(0,bob); ctx.translate(0,-h); ctx.rotate(tilt); ctx.scale(sx,sy); ctx.translate(0,h);
     const aura = { c:'#ffb25a', f:'#7fe8ff', h:'#ff654c', s:'#9fe08a', l:'#ffd25a' }[e.t];
     glow(0,-h*.58,e.t==='f'?38:27,aura,e.st==='wind'||e.st==='charge'?.38:.18);
     ctx.imageSmoothingEnabled = true; ctx.drawImage(im,-w/2,-h,w,h);
