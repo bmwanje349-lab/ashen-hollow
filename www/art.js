@@ -4,11 +4,13 @@ let TM = 0;
 /* Generated artwork atlas: painted biomes, stone material and animated knight frames. */
 const GAME_ART = { worlds: null, knight: null, tilePattern: null };
 const NPC_ART = {};
+const ENEMY_ART = {};
 try {
   if (typeof Image !== 'undefined') {
     GAME_ART.worlds = new Image(); GAME_ART.worlds.src = 'assets/worlds.webp';
     GAME_ART.knight = new Image(); GAME_ART.knight.src = 'assets/knight.png';
     for (const id of ['mara','oren','pilgrim']) { NPC_ART[id] = new Image(); NPC_ART[id].src = 'assets/npc-' + id + '.svg'; }
+    for (const id of ['c','f','h','s','l']) { ENEMY_ART[id] = new Image(); ENEMY_ART[id].src = 'assets/enemy-' + id + '.svg'; }
   }
 } catch (e) {}
 function drawKnightFrame(row, col, x, y, w, h, face, alpha) {
@@ -274,7 +276,20 @@ function drawPlayer(p) {
 /* ---------- enemies ---------- */
 function drawEnemy(e) {
   ctx.save(); ctx.translate(e.x, e.y);
-  const fl = e.flash > 0, body = fl ? '#ffffff' : '#090b12', rim = fl ? '#ffffff' : '#46557a';
+  const fl = e.flash > 0, dir = e.t === 'f' ? (e.vx < -5 ? -1 : 1) : (e.dir || 1);
+  const im = ENEMY_ART[e.t];
+  if (im && im.complete && im.naturalWidth) {
+    ctx.scale(dir,1);
+    const bob = e.t === 'f' ? Math.sin(e.anim * 6) * 3 : Math.sin(e.anim * 5) * 1.3;
+    const w = Math.max(48,e.w*1.95), h = Math.max(54,e.h*1.9);
+    ctx.translate(0,bob);
+    const aura = { c:'#ffb25a', f:'#7fe8ff', h:'#ff654c', s:'#9fe08a', l:'#ffd25a' }[e.t];
+    glow(0,-h*.58,e.t==='f'?38:27,aura,e.st==='wind'||e.st==='charge'?.38:.18);
+    ctx.imageSmoothingEnabled = true; ctx.drawImage(im,-w/2,-h,w,h);
+    if(fl){ctx.globalCompositeOperation='source-atop';ctx.fillStyle='rgba(255,255,255,.65)';ctx.fillRect(-w/2,-h,w,h);ctx.globalCompositeOperation='source-over';}
+    ctx.restore(); return;
+  }
+  const body = fl ? '#ffffff' : '#090b12', rim = fl ? '#ffffff' : '#46557a';
   const dir = e.t === 'f' ? (e.vx < -5 ? -1 : 1) : (e.dir || 1);
   ctx.scale(dir, 1); ctx.lineWidth = 1.6; ctx.fillStyle = body; ctx.strokeStyle = rim;
   const eye = (x, y, c, r) => { glow(x, y, 16, c, 0.5); ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x, y, r || 2.4, 0, 7); ctx.fill(); ctx.fillStyle = body; };
