@@ -135,7 +135,9 @@ newGame({}); A.loadRoom('r3', 1, 13);
 const roomOf = { warden: 'r3', weaver: 'r8', duelist: 'r12', sovereign: 'r11' };
 const MVS = { warden: ['lunge', 'slam', 'sweep', 'combo'], weaver: ['webs', 'pounce', 'skitter', 'rain'], duelist: ['dashslash', 'combo', 'dive', 'blades', 'retreat'], sovereign: ['stomp', 'orbs', 'rift', 'beam', 'sweep'] };
 for (const id of Object.keys(roomOf)) {
-  // (a) a motionless player must get hurt
+  // (a) a motionless player must get hurt; keep move selection repeatable.
+  const savedRandom = Math.random;
+  Math.random = () => 0.42;
   newGame({ dash: true, dj: true }); A.loadRoom(roomOf[id], 1, 13);
   let G = A.G, p = G.p, hurt = 0, f = 0; const moves = new Set();
   p.x = 9 * T; p.y = (A.ROOMS[roomOf[id]].boss.floorRow) * T;
@@ -146,6 +148,7 @@ for (const id of Object.keys(roomOf)) {
     if (hurt >= 6) break;
   }
   ok(hurt >= 3, id + ' boss almost never hits a stationary player (hurt ' + hurt + ')');
+  Math.random = savedRandom;
   // (b) tank bot kills it, covering all moves
   newGame({ dash: true, dj: true }); A.loadRoom(roomOf[id], 1, 13); G = A.G; p = G.p; p.x = 9 * T; p.y = A.ROOMS[roomOf[id]].boss.floorRow * T;
   const used = new Set(); f = 0; let t0 = 0;
