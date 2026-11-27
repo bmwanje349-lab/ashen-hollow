@@ -1,6 +1,12 @@
 // Headless game test: boots the real game, renders every room, fights every boss, checks flows.
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const noop = () => {};
+const audioInstances = [];
+global.Audio = class {
+  constructor(src) { this.src=src; this.loop=false; this.preload=''; this.volume=1; this.paused=true; audioInstances.push(this); }
+  play() { this.paused=false; return Promise.resolve(); }
+  pause() { this.paused=true; }
+};
 const grad = () => ({ addColorStop: noop });
 const ctxStub = new Proxy({}, { get: (t, k) => (k in t ? t[k] : (k === 'createLinearGradient' || k === 'createRadialGradient' ? grad : noop)), set: (t, k, v) => { t[k] = v; return true; } });
 const el = () => ({ style: {}, classList: { add: noop, remove: noop, toggle: noop }, addEventListener: noop, getContext: () => ctxStub, getBoundingClientRect: () => ({ left: 0, top: 0, width: 960, height: 540 }), dataset: {}, width: 0, height: 0 });
@@ -39,6 +45,9 @@ for (const id of Object.keys(A.ROOMS)) {
   if (A.state !== 'play') A.go('play');
 }
 console.log('rooms render + wander ok:', Object.keys(A.ROOMS).length);
+
+// Ambient music starts in play, pauses in menus and resumes on return.
+newGame({}); A.step(1/60); ok(audioInstances.some(a=>!a.paused),'ambient track did not start during play'); A.go('pause'); ok(audioInstances.every(a=>a.paused),'ambient music continued on the pause menu'); A.go('play'); A.step(1/60); ok(audioInstances.some(a=>!a.paused),'ambient music did not resume after pause'); A.go('title'); ok(audioInstances.every(a=>a.paused),'ambient music continued after returning to title');
 
 // ---- 2. room transitions land where they should ----
 for (const id of Object.keys(A.ROOMS)) for (const e of A.ROOMS[id].exits) {
