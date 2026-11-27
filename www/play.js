@@ -99,7 +99,7 @@ function doSlash(p) {
 /* ---------- player update ---------- */
 function updPlayer(dt) {
   const p = G.p, W_ = G.W;
-  p.inv -= dt; p.atkT -= dt;
+  p.inv -= dt; p.atkT -= dt; p.lanceT = Math.max(0, (p.lanceT || 0) - dt);
   if (p.dead) { p.vy = Math.min(MAXFALL, p.vy + GRAV * dt); p.vx *= 0.9; moveBox(p, dt, W_); return; }
   /* heal */
   if (inp.heal && p.soul >= 33 && p.ground && p.hp < p.maxhp && p.hurtT <= 0 && p.dashT <= 0 && p.atkT <= 0) {
@@ -107,7 +107,7 @@ function updPlayer(dt) {
     if (p.healT >= 0.85) { p.hp++; p.soul -= 33; p.healT = 0; sfx('heal'); spawnParts(p.x, p.y - 24, 16, '#fff6c8', 220, 0.8); }
   } else { p.healT = 0; p.noCtl = false; }
   /* attack */
-  if (inp.skill && (p.lanceT || 0) <= 0 && save.ab.lance && p.soul >= 33 && !p.noCtl && p.hurtT <= 0 && p.dashT <= 0) {
+  if (pressed.skill && (p.lanceT || 0) <= 0 && save.ab.lance && p.soul >= 33 && !p.noCtl && p.hurtT <= 0 && p.dashT <= 0) {
     p.soul -= 33; p.lanceT = 0.38; G.proj.push({ x: p.x + p.face * 22, y: p.y - 27, vx: p.face * 650, vy: 0, g: 0, r: 11, life: 1.45, col: '#bceeff', dmg: 2, kind: 'orb', hitW: true, fromPlayer: true });
     sfx('lance'); G.shake = Math.max(G.shake, 2); spawnParts(p.x + p.face * 18, p.y - 27, 7, '#bceeff', 170, 0.35);
   }
