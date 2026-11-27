@@ -82,35 +82,51 @@ const SFX = {
   win: () => { [262, 330, 392, 523, 659].forEach((f, i) => setTimeout(() => tone(f, 1.2, 'sine', 0.05), i * 220)); },
 };
 function sfx(n) { try { SFX[n](); } catch (e) {} }
-let mT = 0, mStep = 0, mBar = 0;
+let mT = 0, mStep = 0, mBar = 0, mMusicTarget = -1;
+const MUSIC_TRACKS = [];
+try {
+  if (typeof Audio !== 'undefined') {
+    const dungeon = new Audio('assets/audio/dungeon-ambience.ogg');
+    const dark = new Audio('assets/audio/dark-theme.ogg');
+    for (const track of [dungeon,dark]) { track.loop = true; track.preload = 'auto'; track.volume = 0; }
+    MUSIC_TRACKS.push(dungeon,dark);
+  }
+} catch (e) {}
 const MUSIC_MODES = [
-  { root: 110, notes: [0,3,5,7,10,7,5,3], bass: [0,-5, -2,-7], wave: 'sine' },
-  { root: 98, notes: [0,2,5,7,9,7,5,2], bass: [0,-3,-5,-2], wave: 'triangle' },
-  { root: 82.4, notes: [0,3,4,7,8,7,4,3], bass: [0,-5,-3,-7], wave: 'sawtooth' },
-  { root: 73.4, notes: [0,2,5,6,9,6,5,2], bass: [0,-2,-5,-7], wave: 'triangle' }
+  { root:110, notes:[0,3,5,7,10,7,5,3], bass:[0,-5,-2,-7] },
+  { root:98, notes:[0,2,5,7,9,7,5,2], bass:[0,-3,-5,-2] },
+  { root:82.4, notes:[0,3,4,7,8,7,4,3], bass:[0,-5,-3,-7] },
+  { root:73.4, notes:[0,2,5,6,9,6,5,2], bass:[0,-2,-5,-7] }
 ];
-function music(dt, boss) {
-  mT -= dt; if (mT > 0) return;
-  const zone = G && G.room ? G.room.zone : 0, mode = MUSIC_MODES[zone] || MUSIC_MODES[0];
-  mT = boss ? 0.24 : 0.48;
-  if (!AC || muted) { mStep++; return; }
-  const beat = mStep % 16, octave = boss ? 0.5 : 1;
-  if (beat % 4 === 0) {
-    const bass = mode.root * Math.pow(2, mode.bass[(beat >> 2) % 4] / 12) * octave;
-    tone(bass, boss ? 0.42 : 0.78, boss ? 'sawtooth' : 'sine', boss ? 0.055 : 0.035, -4);
-    if (beat === 0 || beat === 8) tone(bass * 2, 0.24, 'triangle', boss ? 0.025 : 0.012);
+function music(dt,boss) {
+  const zone=G&&G.room?G.room.zone:0,mode=MUSIC_MODES[zone]||MUSIC_MODES[0];
+  const target=zone>=2?1:0;
+  if(muted){
+    for(const track of MUSIC_TRACKS){track.volume=0;if(!track.paused)track.pause();}
+    mMusicTarget=-1;
+  } else if(MUSIC_TRACKS.length){
+    if(mMusicTarget!==target)mMusicTarget=target;
+    MUSIC_TRACKS.forEach((track,index)=>{
+      if(index===target){
+        if(track.paused){const result=track.play();if(result&&result.catch)result.catch(()=>{});}
+        track.volume=Math.min(boss?.12:.19,track.volume+dt*.5);
+      } else {
+        track.volume=Math.max(0,track.volume-dt*.55);
+        if(track.volume===0&&!track.paused)track.pause();
+      }
+    });
   }
-  const step = mode.notes[(beat >> 1) % mode.notes.length];
-  if (beat % 2 === 0) {
-    const lead = mode.root * Math.pow(2, step / 12) * (boss ? 2 : 3.0);
-    tone(lead, boss ? 0.18 : 0.42, boss ? 'square' : 'triangle', boss ? 0.026 : 0.014, beat % 8 === 6 ? -lead * 0.08 : 0);
+  mT-=dt;if(mT>0)return;
+  mT=boss?.28:.9;
+  if(!AC||muted){mStep++;return;}
+  const beat=mStep%16,octave=boss?.5:1;
+  if(beat%4===0){
+    const bass=mode.root*Math.pow(2,mode.bass[(beat>>2)%4]/12)*octave;
+    tone(bass,boss?.42:.78,boss?'sawtooth':'sine',boss?.038:.016,-4);
+    if(beat===0||beat===8)tone(bass*2,.24,'triangle',boss?.018:.008);
   }
-  if (!boss && (beat === 3 || beat === 11)) {
-    const shimmer = mode.root * Math.pow(2, mode.notes[(beat + 3) % 8] / 12) * 6;
-    tone(shimmer, 1.1, 'sine', 0.009);
-  }
-  if (boss && (beat % 4 === 2)) noise(0.09, 0.022, 420, true);
-  if (beat === 15) { mBar++; if (!boss && mBar % 2 === 0) noise(0.16, 0.012, 700, true); }
+  if(boss&&beat%4===2)noise(.09,.018,420,true);
+  if(beat===15){mBar++;if(!boss&&mBar%2===0)noise(.16,.008,700,true);}
   mStep++;
 }
 

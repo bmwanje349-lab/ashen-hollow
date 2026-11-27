@@ -20,6 +20,8 @@ jobs:
         run: bash scripts/install-cc0-art.sh
       - name: Install CC0 fantasy monster animation pack
         run: bash scripts/install-cc0-monsters.sh
+      - name: Install CC0 ambient soundtrack
+        run: bash scripts/install-cc0-audio.sh
       - name: Install Capacitor
         run: npm install
       - name: Create Android project
