@@ -86,8 +86,8 @@ let mT = 0, mStep = 0, mBar = 0, mMusicTarget = -1;
 const MUSIC_TRACKS = [];
 try {
   if (typeof Audio !== 'undefined') {
-    const dungeon = new Audio('assets/audio/dungeon-ambience.ogg');
-    const dark = new Audio('assets/audio/dark-theme.ogg');
+    const dungeon = new Audio('assets/audio/dungeon-loop.ogg');
+    const dark = new Audio('assets/audio/dark-shrine-loop.ogg');
     for (const track of [dungeon,dark]) { track.loop = true; track.preload = 'auto'; track.volume = 0; }
     MUSIC_TRACKS.push(dungeon,dark);
   }
