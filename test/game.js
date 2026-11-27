@@ -131,6 +131,9 @@ newGame({}); A.loadRoom('r3', 1, 13);
   ok(A.save.maxhp === hp0 + 1, 'heart core did not add health');
 }
 
+// Enemy deaths use the full one-shot animation duration before removal.
+newGame({}); A.loadRoom('r1',4,13); { const G=A.G; G.enemies.length=0; const e=Object.assign(newBody({}),{t:'c',x:500,y:14*T,w:28,h:20,hp:1,maxhp:1,soul:5,dir:1,st:'idle',stT:3,flash:0,stun:0,hurtAnimT:-1,attackAnimT:-1,deathAnimT:0,dying:false,home:{x:500,y:14*T},anim:0,dead:false}); G.enemies.push(e); hurtEnemy(e,1,1); ok(e.dying&&!e.dead,'enemy skipped its death animation'); A.step(1/60); ok(G.enemies.includes(e),'enemy was removed before the death animation finished'); for(let i=0;i<180&&G.enemies.includes(e);i++) A.step(1/60); ok(!G.enemies.includes(e),'enemy death animation never finished'); }
+
 // ---- 5. each boss: moves all run, boss can hurt you, boss can be killed ----
 const roomOf = { warden: 'r3', weaver: 'r8', duelist: 'r12', sovereign: 'r11' };
 const MVS = { warden: ['lunge', 'slam', 'sweep', 'combo'], weaver: ['webs', 'pounce', 'skitter', 'rain'], duelist: ['dashslash', 'combo', 'dive', 'blades', 'retreat'], sovereign: ['stomp', 'orbs', 'rift', 'beam', 'sweep'] };

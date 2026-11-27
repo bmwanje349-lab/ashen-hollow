@@ -78,7 +78,7 @@ function doSlash(p) {
   const r = slashRect(p), dmg = 1 + (save.sword ? 1 : 0);
   let hit = false, pogo = false;
   for (const e of G.enemies) {
-    if (e.dead || p.hitSet.has(e)) continue;
+    if (e.dead || e.dying || p.hitSet.has(e)) continue;
     if (rectOv(r.x, r.y, r.w, r.h, e.x - e.w / 2, e.y - e.h, e.w, e.h)) { p.hitSet.add(e); hurtEnemy(e, dmg, p.atkDir === 'f' ? p.atkFace : sg(e.x - p.x)); hit = true; if (p.atkDir === 'd') pogo = true; }
   }
   const b = G.boss;

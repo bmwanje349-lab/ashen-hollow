@@ -23,7 +23,7 @@ function addText(x, y, s, col) { G.texts.push({ x, y, s: String(s), col: col || 
 function spawnEnemy(t, tx, ty) {
   const d = E_DEF[t];
   const e = Object.assign(newBody({ dash: false, dj: false }), { t, x: tx * T + T / 2, y: (ty + 1) * T, w: d.w, h: d.h, hp: d.hp, maxhp: d.hp, soul: d.soul,
-    dir: Math.random() < 0.5 ? -1 : 1, st: 'idle', stT: rnd(0.3, 1.2), flash: 0, stun: 0, home: { x: tx * T + T / 2, y: (ty + 1) * T }, anim: rnd(0, 6), dead: false });
+    dir: Math.random() < 0.5 ? -1 : 1, st: 'idle', stT: rnd(0.3, 1.2), flash: 0, stun: 0, hurtAnimT: -1, attackAnimT: -1, deathAnimT: 0, dying: false, home: { x: tx * T + T / 2, y: (ty + 1) * T }, anim: rnd(0, 6), dead: false });
   if (t === 'f') { e.y = ty * T + 40; e.home.y = e.y; }
   G.enemies.push(e);
 }
@@ -33,8 +33,11 @@ function groundAhead(e, dir) {
   return c === '#' || c === 'W' || c === 'L' || c === '=';
 }
 function updEnemy(e, dt) {
+  if(e.dying){e.deathAnimT+=dt;if(e.deathAnimT>=monsterAnimationDuration(MONSTER_FOR_ENEMY[e.t]||'slime','death'))e.dead=true;return;}
   const p = G.p, dx = p.x - e.x, dy = (p.y - 20) - (e.y - e.h / 2), adx = Math.abs(dx);
   e.flash = Math.max(0, e.flash - dt); e.stun -= dt; e.stT -= dt; e.anim += dt;
+  if(e.hurtAnimT>=0){e.hurtAnimT+=dt;if(e.hurtAnimT>=monsterAnimationDuration(MONSTER_FOR_ENEMY[e.t]||'slime','hurt'))e.hurtAnimT=-1;}
+  if(e.attackAnimT>=0){e.attackAnimT+=dt;if(e.attackAnimT>=monsterAnimationDuration(MONSTER_FOR_ENEMY[e.t]||'slime','attack'))e.attackAnimT=-1;}
   const flying = e.t === 'f';
   if (e.stun > 0) {
     e.vx *= Math.pow(0.02, dt);
@@ -57,7 +60,7 @@ function updEnemy(e, dt) {
   } else if (e.t === 's') {
     e.dir = sg(dx); e.vx = 0;
     if (e.stT <= 0 && adx < 460 && Math.abs(dy) < 240) {
-      e.stT = 2.3;
+      e.stT = 2.3; e.attackAnimT = 0;
       shoot(e.x + e.dir * 14, e.y - 24, clamp(dx * 0.9, -330, 330), -300, { g: 700, r: 7, col: '#9fe0a0', life: 3 });
     }
   } else if (e.t === 'l') {
@@ -88,12 +91,14 @@ function touchBody(e) {
   return rectOv(p.x - 9, p.y - 42, 18, 42, e.x - e.w / 2 + 3, e.y - e.h + 3, e.w - 6, e.h - 4);
 }
 function hurtEnemy(e, dmg, dir) {
-  e.hp -= dmg; e.flash = 0.12; e.stun = 0.18; e.vx += dir * (e.t === 'h' ? 120 : 260); if (e.t === 'f') e.vy -= 80;
+  if(e.dead || e.dying) return;
+  e.hp -= dmg; e.flash = 0.12; e.stun = 0.18; e.hurtAnimT = e.hp>0 ? 0 : -1; e.attackAnimT = -1; e.vx += dir * (e.t === 'h' ? 120 : 260); if (e.t === 'f') e.vy -= 80;
   if (e.st === 'wind' && e.t === 'h') e.stT = Math.max(e.stT, 0.2);
   spawnParts(e.x, e.y - e.h / 2, 6, '#dfe8ff', 220, 0.4);
   G.p.soul = Math.min(99, G.p.soul + (save.equipped.includes('soul') ? 16.5 : 11));
   if (e.hp <= 0) {
-    e.dead = true; spawnParts(e.x, e.y - e.h / 2, 18, '#bfc9e8', 300, 0.8);
+    e.dying = true; e.deathAnimT = 0; e.vx = 0; e.vy = 0; e.stun = 0;
+    spawnParts(e.x, e.y - e.h / 2, 18, '#bfc9e8', 300, 0.8);
     sfx('hit'); G.hitstop = Math.max(G.hitstop, 0.07);
   } else sfx('hit');
 }

@@ -55,33 +55,54 @@ async function loadMossKnightAnimations() {
 }
 if (typeof fetch === 'function' && typeof Image !== 'undefined') loadMossKnightAnimations();
 
-function drawMossKnightFrame(name, elapsed, x, y, w, h, face, alpha, loop) {
-  const animation = MOSS_KNIGHT[name];
-  if (!animation || !animation.image || !animation.frames.length) return false;
-  const duration = animation.duration;
-  let time = Math.max(0, elapsed || 0) * 1000;
-  if (loop === undefined ? animation.loop : loop) time %= duration;
-  else time = Math.min(time, Math.max(0, duration - 1));
-  let frame = animation.frames[animation.frames.length - 1];
-  for (const candidate of animation.frames) {
-    if (time < candidate.duration) { frame = candidate; break; }
-    time -= candidate.duration;
-  }
-  const f = frame.frame, src = frame.source, trim = frame.trim;
-  const pivot = frame.pivot || {
-    x: (animation.meta.pivot_px && animation.meta.pivot_px[0] / src.w) || 0.5,
-    y: (animation.meta.pivot_px && animation.meta.pivot_px[1] / src.h) || 0.875
-  };
-  const sx = w / src.w, sy = h / src.h;
-  ctx.save();
-  ctx.globalAlpha *= alpha === undefined ? 1 : alpha;
-  ctx.translate(x, y); ctx.scale(face === -1 ? -1 : 1, 1);
-  ctx.imageSmoothingEnabled = true;
-  ctx.drawImage(animation.image, f.x, f.y, f.w, f.h,
-    -pivot.x * w + trim.x * sx, -pivot.y * h + trim.y * sy, trim.w * sx, trim.h * sy);
-  ctx.restore();
-  return true;
+const MONSTER_ART = {};
+const MONSTER_CREATURES = ['slime','mushroom','goblin','golem'];
+const MONSTER_ANIMATION_NAMES = ['idle','walk','attack','hurt','death'];
+const MONSTER_FOR_ENEMY = { c:'slime', s:'mushroom', h:'goblin', l:'golem' };
+
+async function loadAtlasAnimations(root, prefix, names) {
+  const loaded = await Promise.all(names.map(async name => {
+    const base = root + '/' + prefix + '-' + name;
+    try {
+      const response = await fetch(base + '.json', { cache:'force-cache' });
+      if (!response.ok) return null;
+      const atlas = await response.json();
+      const image = new Image(); image.src = base + '.png';
+      await new Promise(resolve => { if(image.complete)return resolve();image.onload=resolve;image.onerror=resolve; });
+      if (!image.naturalWidth || !atlas.frames || !atlas.meta) return null;
+      const frames=Object.entries(atlas.frames).map(([key,value])=>({
+        key,frame:value.frame||value,pivot:value.pivot||null,
+        source:value.sourceSize||atlas.meta.cell||{w:256,h:256},
+        trim:value.spriteSourceSize||{x:0,y:0,w:256,h:256},
+        duration:value.duration||1000/(atlas.meta.fps||8)
+      })).sort((a,b)=>a.key.localeCompare(b.key,undefined,{numeric:true}));
+      return [name,{image,frames,meta:atlas.meta,duration:frames.reduce((n,f)=>n+f.duration,0),loop:atlas.meta.loop!==false}];
+    } catch(err) { return null; }
+  }));
+  return Object.fromEntries(loaded.filter(Boolean));
 }
+async function loadMossKnightAnimations(){Object.assign(MOSS_KNIGHT,await loadAtlasAnimations('assets/moss-knight','moss-knight',MOSS_ANIMATION_NAMES));}
+async function loadMonsterAnimations(){
+  await Promise.all(MONSTER_CREATURES.map(async creature=>{MONSTER_ART[creature]=await loadAtlasAnimations('assets/monsters/'+creature,creature,MONSTER_ANIMATION_NAMES);}));
+}
+if(typeof fetch==='function'&&typeof Image!=='undefined'){loadMossKnightAnimations();loadMonsterAnimations();}
+
+function drawAtlasFrame(animation,elapsed,x,y,w,h,face,alpha,loop){
+  if(!animation||!animation.image||!animation.image.naturalWidth||!animation.frames.length)return false;
+  let time=Math.max(0,elapsed||0)*1000;
+  if(loop===undefined?animation.loop:loop)time%=animation.duration;
+  else time=Math.min(time,Math.max(0,animation.duration-1));
+  let frame=animation.frames[animation.frames.length-1];
+  for(const candidate of animation.frames){if(time<candidate.duration){frame=candidate;break;}time-=candidate.duration;}
+  const f=frame.frame,src=frame.source,trim=frame.trim;
+  const pivot=frame.pivot||{x:(animation.meta.pivot_px&&animation.meta.pivot_px[0]/src.w)||.5,y:(animation.meta.pivot_px&&animation.meta.pivot_px[1]/src.h)||.875};
+  const sx=w/src.w,sy=h/src.h;
+  ctx.save();ctx.globalAlpha*=alpha===undefined?1:alpha;ctx.translate(x,y);ctx.scale(face===-1?-1:1,1);ctx.imageSmoothingEnabled=true;
+  ctx.drawImage(animation.image,f.x,f.y,f.w,f.h,-pivot.x*w+trim.x*sx,-pivot.y*h+trim.y*sy,trim.w*sx,trim.h*sy);ctx.restore();return true;
+}
+function drawMossKnightFrame(name,elapsed,x,y,w,h,face,alpha,loop){return drawAtlasFrame(MOSS_KNIGHT[name],elapsed,x,y,w,h,face,alpha,loop);}
+function drawMonsterFrame(creature,name,elapsed,x,y,w,h,face,alpha,loop){const set=MONSTER_ART[creature];return drawAtlasFrame(set&&set[name],elapsed,x,y,w,h,face,alpha,loop);}
+function monsterAnimationDuration(creature,name){const set=MONSTER_ART[creature],anim=set&&set[name];return anim?anim.duration/1000:.5;}
 function mossAnimationDuration(name) { return MOSS_KNIGHT[name] ? MOSS_KNIGHT[name].duration / 1000 : 0.5; }
 
 function tilePattern() {
@@ -349,25 +370,43 @@ function drawPlayer(p) {
 
 /* ---------- enemies ---------- */
 function drawEnemy(e) {
-  ctx.save(); ctx.translate(e.x, e.y);
-  const fl = e.flash > 0, dir = e.t === 'f' ? (e.vx < -5 ? -1 : 1) : (e.dir || 1);
-  const im = ENEMY_ART[e.t];
-  if (im && im.complete && im.naturalWidth) {
-    ctx.scale(dir,1);
-    const bob = e.t === 'f' ? Math.sin(e.anim * 6) * 3 : Math.sin(e.anim * 5) * 1.3;
-    const w = Math.max(48,e.w*1.95), h = Math.max(54,e.h*1.9);
-    let sx = 1, sy = 1, tilt = 0;
-    if (e.t === 'c') { const pulse = Math.sin(e.anim * 9); sx = 1 + pulse * 0.055; sy = 1 - pulse * 0.045; }
-    else if (e.t === 'f') { tilt = e.st === 'swoop' ? clamp(e.vy / 1500, -0.34, 0.34) : Math.sin(e.anim * 2) * 0.035; sx = e.st === 'wind' ? 0.9 : 1.04; }
-    else if (e.t === 'h') { if (e.st === 'wind') { sx = 1.04; sy = 0.84 + Math.sin(e.anim * 24) * 0.035; } else if (e.st === 'charge') { sx = 1.13; sy = 0.92; tilt = -e.dir * 0.07; } else if (e.st === 'rest') { sy = 0.94; } }
-    else if (e.t === 's') { const recoil = e.stT > 2.05 ? 1 : 0; sx = 1 + recoil * 0.07; sy = 1 - recoil * 0.06; }
-    else if (e.t === 'l' && !e.ground) { sx = 1.08; sy = 0.9; tilt = e.dir * 0.06; }
-    ctx.translate(0,bob); ctx.translate(0,-h); ctx.rotate(tilt); ctx.scale(sx,sy); ctx.translate(0,h);
-    const aura = { c:'#ffb25a', f:'#7fe8ff', h:'#ff654c', s:'#9fe08a', l:'#ffd25a' }[e.t];
-    glow(0,-h*.58,e.t==='f'?38:27,aura,e.st==='wind'||e.st==='charge'?.38:.18);
-    ctx.imageSmoothingEnabled = true; ctx.drawImage(im,-w/2,-h,w,h);
+  if(e.dead)return;
+  const fl=e.flash>0,flying=e.t==='f',dir=flying?(e.vx < -5?-1:1):(e.dir||1);
+  const creature=MONSTER_FOR_ENEMY[e.t],set=creature&&MONSTER_ART[creature];
+  if(set){
+    let action='idle',elapsed=e.anim,loop=true;
+    if(e.dying){action='death';elapsed=e.deathAnimT||0;loop=false;}
+    else if(e.hurtAnimT>=0){action='hurt';elapsed=e.hurtAnimT;loop=false;}
+    else if(e.attackAnimT>=0||(e.t==='h'&&e.st==='charge')||(e.t==='l'&&!e.ground)){action='attack';elapsed=e.attackAnimT>=0?e.attackAnimT:e.anim;loop=false;}
+    else if(Math.abs(e.vx)>28){action='walk';elapsed=e.anim;loop=true;}
+    const animation=set[action]||set.idle,cell=(animation&&animation.meta&&animation.meta.cell)||{w:256,h:256};
+    const h=Math.max(58,e.h*1.75),w=h*(cell.w/cell.h),face=dir>0?-1:1;
+    const bob=e.t==='c'?Math.sin(e.anim*5):Math.sin(e.anim*4)*.8;
+    ctx.save();ctx.translate(e.x,e.y+bob);
+    const aura={c:'#a9e5a2',s:'#a1d9a0',h:'#ff9b79',l:'#e8c78d'}[e.t]||'#a9e5a2';
+    if(e.t==='h'&&e.st==='wind')glow(0,-h*.56,58,'#ff6b48',.3);else glow(0,-h*.58,e.t==='l'?48:32,aura,e.dying?.10:.17);
+    if(action==='attack'&&!e.dying){ctx.save();ctx.globalAlpha=.2;ctx.strokeStyle=e.t==='h'?'#ff9b79':'#e7edc7';ctx.lineWidth=3;ctx.beginPath();ctx.arc(face*16,-h*.48,h*.48,-1.5,.9,face<0);ctx.stroke();ctx.restore();}
+    if(fl&&!e.dying){ctx.save();ctx.globalCompositeOperation='source-atop';ctx.fillStyle='rgba(255,255,255,.24)';ctx.fillRect(-w/2,-h,w,h);ctx.restore();}
+    if(drawMonsterFrame(creature,action,elapsed,0,0,w,h,face,1,loop)){ctx.restore();return;}
+    ctx.restore();
+  }
+  ctx.save();ctx.translate(e.x,e.y);
+  const dirFallback=flying?(e.vx < -5?-1:1):(e.dir||1),im=ENEMY_ART[e.t];
+  if(im&&im.complete&&im.naturalWidth){
+    ctx.scale(dirFallback,1);
+    const bob=flying?Math.sin(e.anim*6)*3:Math.sin(e.anim*5)*1.3,w=Math.max(48,e.w*1.95),h=Math.max(54,e.h*1.9);
+    let sx=1,sy=1,tilt=0;
+    if(e.t==='c'){const pulse=Math.sin(e.anim*9);sx=1+pulse*.055;sy=1-pulse*.045;}
+    else if(flying){tilt=e.st==='swoop'?clamp(e.vy/1500,-.34,.34):Math.sin(e.anim*2)*.035;sx=e.st==='wind'?.9:1.04;}
+    else if(e.t==='h'){if(e.st==='wind'){sx=1.04;sy=.84+Math.sin(e.anim*24)*.035;}else if(e.st==='charge'){sx=1.13;sy=.92;tilt=-e.dir*.07;}else if(e.st==='rest')sy=.94;}
+    else if(e.t==='s'){const recoil=e.stT>2.05?1:0;sx=1+recoil*.07;sy=1-recoil*.06;}
+    else if(e.t==='l'&&!e.ground){sx=1.08;sy=.9;tilt=e.dir*.06;}
+    ctx.translate(0,bob);ctx.translate(0,-h);ctx.rotate(tilt);ctx.scale(sx,sy);ctx.translate(0,h);
+    const aura={c:'#ffb25a',f:'#7fe8ff',h:'#ff654c',s:'#9fe08a',l:'#ffd25a'}[e.t];
+    glow(0,-h*.58,flying?38:27,aura,e.st==='wind'||e.st==='charge'?.38:.18);
+    ctx.imageSmoothingEnabled=true;ctx.drawImage(im,-w/2,-h,w,h);
     if(fl){ctx.globalCompositeOperation='source-atop';ctx.fillStyle='rgba(255,255,255,.65)';ctx.fillRect(-w/2,-h,w,h);ctx.globalCompositeOperation='source-over';}
-    ctx.restore(); return;
+    ctx.restore();return;
   }
   const body = fl ? '#ffffff' : '#090b12', rim = fl ? '#ffffff' : '#46557a';
   ctx.scale(dir, 1); ctx.lineWidth = 1.6; ctx.fillStyle = body; ctx.strokeStyle = rim;
