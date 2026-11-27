@@ -6,7 +6,7 @@ function toast(m) { toastMsg = m; toastT = 2.4; }
 function newPlayer() {
   const p = newBody(save.ab);
   Object.assign(p, { hp: save.maxhp, maxhp: save.maxhp, soul: 0, inv: 0, atkT: 0, atkDur: 0.3, atkAge: 0, atkDir: 'f', atkFace: 1, hitSet: new Set(), healT: 0,
-    dead: false, safe: { x: 0, y: 0 }, anim: 0, airAnimT: 0, hurtAnimT: -1, wasGround: true, fall: 0, noCtl: false });
+    dead: false, safe: { x: 0, y: 0 }, anim: 0, airAnimT: 0, hurtAnimT: -1, comboStep: 0, comboT: 0, wasGround: true, fall: 0, noCtl: false });
   return p;
 }
 function startGame() {
@@ -38,7 +38,7 @@ function hurtPlayer(dmg, srcX) {
   const p = G.p;
   if (p.inv > 0 || p.dead) return;
   if (save.equipped.includes('ward') && Math.random() < 0.25) { p.inv = 0.28; sfx('clink'); spawnParts(p.x, p.y - 24, 8, '#f4d39a', 180, 0.45); toast('ASHEN WARD'); return; }
-  p.hp -= dmg; p.inv = 1.4; p.hurtT = 0.28; p.hurtAnimT = 0; p.healT = 0; p.dashT = 0;
+  p.hp -= dmg; p.inv = 1.4; p.hurtT = 0.28; p.hurtAnimT = 0; p.comboStep = 0; p.comboT = 0; p.healT = 0; p.dashT = 0;
   p.vx = sg(p.x - srcX) * 330; p.vy = -340; p.ground = false;
   G.hitstop = Math.max(G.hitstop, 0.1); G.shake = Math.max(G.shake, 12);
   sfx('hurt'); spawnParts(p.x, p.y - 22, 14, '#e8eeff', 300, 0.6);
@@ -58,10 +58,11 @@ function respawn() {
 
 /* ---------- sword ---------- */
 function slashRect(p) {
-  const reach = 80 + (save.sword ? 22 : 0) + (save.equipped.includes('reach') ? 30 : 0);
-  if (p.atkDir === 'u') return { x: p.x - 32, y: p.y - 46 - 72, w: 64, h: 72 + 20 };
-  if (p.atkDir === 'd') return { x: p.x - 32, y: p.y - 6, w: 64, h: 66 };
-  return { x: p.atkFace > 0 ? p.x + 4 : p.x - 4 - reach, y: p.y - 56, w: reach, h: 54 };
+  const stage = p.comboStep || 1;
+  const reach = 80 + (save.sword ? 22 : 0) + (save.equipped.includes('reach') ? 30 : 0) + (stage === 2 ? 14 : stage === 3 ? 28 : 0);
+  if (p.atkDir === 'u') return { x: p.x - (stage === 3 ? 39 : 32), y: p.y - 46 - (stage === 3 ? 86 : 72), w: stage === 3 ? 78 : 64, h: stage === 3 ? 106 : 92 };
+  if (p.atkDir === 'd') return { x: p.x - (stage === 3 ? 39 : 32), y: p.y - 6, w: stage === 3 ? 78 : 64, h: stage === 3 ? 82 : 66 };
+  return { x: p.atkFace > 0 ? p.x + 4 : p.x - 4 - reach, y: p.y - (stage === 3 ? 68 : 56), w: reach, h: stage === 3 ? 68 : stage === 2 ? 58 : 54 };
 }
 function breakWalls(sx, sy) {
   const g = G.W.g, q = [[sx, sy]];
@@ -75,15 +76,15 @@ function breakWalls(sx, sy) {
   sfx('brk'); G.shake = Math.max(G.shake, 6); persist();
 }
 function doSlash(p) {
-  const r = slashRect(p), dmg = 1 + (save.sword ? 1 : 0);
+  const r = slashRect(p), stage = p.comboStep || 1, dmg = 1 + (save.sword ? 1 : 0) + (stage === 3 ? 1 : 0);
   let hit = false, pogo = false;
   for (const e of G.enemies) {
     if (e.dead || e.dying || p.hitSet.has(e)) continue;
-    if (rectOv(r.x, r.y, r.w, r.h, e.x - e.w / 2, e.y - e.h, e.w, e.h)) { p.hitSet.add(e); hurtEnemy(e, dmg, p.atkDir === 'f' ? p.atkFace : sg(e.x - p.x)); hit = true; if (p.atkDir === 'd') pogo = true; }
+    if (rectOv(r.x, r.y, r.w, r.h, e.x - e.w / 2, e.y - e.h, e.w, e.h)) { p.hitSet.add(e); hurtEnemy(e, dmg, p.atkDir === 'f' ? p.atkFace : sg(e.x - p.x)); hit = true; if(stage===3){G.hitstop=Math.max(G.hitstop,.13);G.shake=Math.max(G.shake,5);spawnParts(e.x,e.y-e.h*.55,9,'#f0dfb4',220,.42);} if (p.atkDir === 'd') pogo = true; }
   }
   const b = G.boss;
   if (b && !b.dead && !p.hitSet.has(b) && rectOv(r.x, r.y, r.w, r.h, b.x - b.w / 2, b.y - b.h, b.w, b.h)) {
-    if (hurtBoss(b, dmg, p.atkFace)) { p.hitSet.add(b); hit = true; if (p.atkDir === 'd') pogo = true; }
+    if (hurtBoss(b, dmg, p.atkFace)) { p.hitSet.add(b); hit = true; if(stage===3){G.hitstop=Math.max(G.hitstop,.15);G.shake=Math.max(G.shake,8);spawnParts(b.x,b.y-b.h*.58,12,'#f0dfb4',260,.5);} if (p.atkDir === 'd') pogo = true; }
   }
   const x0 = Math.floor(r.x / T), x1 = Math.floor((r.x + r.w) / T), y0 = Math.floor(r.y / T), y1 = Math.floor((r.y + r.h) / T);
   for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) {
@@ -99,7 +100,7 @@ function doSlash(p) {
 /* ---------- player update ---------- */
 function updPlayer(dt) {
   const p = G.p, W_ = G.W;
-  p.inv -= dt; p.atkT -= dt; p.lanceT = Math.max(0, (p.lanceT || 0) - dt);
+  p.inv -= dt; p.atkT -= dt; p.comboT = Math.max(0,(p.comboT||0)-dt); if(p.comboT<=0)p.comboStep=0; p.lanceT = Math.max(0, (p.lanceT || 0) - dt);
   if (p.dead) { p.vy = Math.min(MAXFALL, p.vy + GRAV * dt); p.vx *= 0.9; moveBox(p, dt, W_); return; }
   /* heal */
   if (inp.heal && p.soul >= 33 && p.ground && p.hp < p.maxhp && p.hurtT <= 0 && p.dashT <= 0 && p.atkT <= 0) {
@@ -112,10 +113,14 @@ function updPlayer(dt) {
     sfx('lance'); G.shake = Math.max(G.shake, 2); spawnParts(p.x + p.face * 18, p.y - 27, 7, '#bceeff', 170, 0.35);
   }
   if ((pressed.atk || inp.atk) && p.atkT <= 0 && !p.noCtl && p.hurtT <= 0) {
+    p.comboStep = p.comboT > 0 ? (p.comboStep % 3) + 1 : 1;
     p.atkDir = inp.up ? 'u' : (inp.down && !p.ground) ? 'd' : 'f';
-    p.atkDur = save.sword ? 0.26 : 0.32; p.atkT = p.atkDur; p.atkAge = 0; p.atkFace = p.face; p.hitSet = new Set(); sfx('swing');
+    const base = save.sword ? 0.25 : 0.31;
+    p.atkDur = p.comboStep === 3 ? base + 0.12 : p.comboStep === 2 ? base - 0.025 : base;
+    p.comboT = p.atkDur + 0.58;
+    p.atkT = p.atkDur; p.atkAge = 0; p.atkFace = p.face; p.hitSet = new Set(); sfx('swing');
   }
-  if (p.atkT > 0) { p.atkAge += dt; if (p.atkAge > 0.04 && p.atkAge < 0.18) doSlash(p); }
+  if (p.atkT > 0) { p.atkAge += dt; const start=p.comboStep===3?0.075:0.04, end=p.comboStep===3?0.245:0.18; if (p.atkAge > start && p.atkAge < end) doSlash(p); }
   const wasG = p.ground, vyBefore = p.vy;
   stepBody(p, { left: inp.left, right: inp.right, down: inp.down, jumpP: pressed.jump, jumpH: inp.jump, dashP: pressed.dash }, dt, W_);
   if (p.jumped) sfx('jump'); if (p.djumped) { sfx('djump'); spawnParts(p.x, p.y, 8, '#cfe0ff', 180, 0.4); }

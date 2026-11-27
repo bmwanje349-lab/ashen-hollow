@@ -54,6 +54,9 @@ for (const id of Object.keys(A.ROOMS)) for (const e of A.ROOMS[id].exits) {
 }
 console.log('exit transitions checked');
 
+// The nail chains three distinct strikes, then drops back to its first swing.
+newGame({}); { const G=A.G,p=G.p; G.enemies.length=0; const stages=[]; for(let stage=1;stage<=3;stage++){A.setK('atk',1);A.step(1/60);A.setK('atk',0);stages.push(p.comboStep);const max=90;for(let f=0;f<max&&p.atkT>0;f++)A.step(1/60); } ok(stages.join(',')==='1,2,3','melee combo sequence was '+stages.join(',')); ok(p.atkDur>0.38,'third swing should have a slower heavy finish'); for(let f=0;f<90;f++)A.step(1/60); A.setK('atk',1);A.step(1/60);A.setK('atk',0);ok(p.comboStep===1,'combo did not reset after its chain window'); }
+
 // ---- 3. combat basics ----
 newGame({});
 A.loadRoom('r1', 4, 13);
