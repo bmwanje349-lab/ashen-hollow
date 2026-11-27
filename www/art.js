@@ -24,6 +24,66 @@ function drawKnightFrame(row, col, x, y, w, h, face, alpha) {
   ctx.drawImage(im, col * 56, row * 56, 56, 56, -w / 2, -h, w, h);
   ctx.restore(); return true;
 }
+const MOSS_KNIGHT = {};
+const MOSS_ANIMATION_NAMES = ['idle','walk','attack','roll','jump','hurt','death'];
+async function loadMossKnightAnimations() {
+  const loaded = await Promise.all(MOSS_ANIMATION_NAMES.map(async name => {
+    const base = 'assets/moss-knight/moss-knight-' + name;
+    try {
+      const response = await fetch(base + '.json', { cache: 'force-cache' });
+      if (!response.ok) throw new Error('Atlas HTTP ' + response.status);
+      const atlas = await response.json();
+      const image = new Image();
+      image.src = base + '.png';
+      await new Promise(resolve => {
+        if (image.complete) return resolve();
+        image.onload = resolve; image.onerror = resolve;
+      });
+      if (!image.naturalWidth || !atlas.frames) return null;
+      const frames = Object.entries(atlas.frames).map(([key, value]) => ({
+        key, frame: value.frame || value, pivot: value.pivot || null,
+        source: value.sourceSize || atlas.meta.cell || { w: 256, h: 256 },
+        trim: value.spriteSourceSize || { x: 0, y: 0, w: 256, h: 256 },
+        duration: value.duration || 1000 / (atlas.meta.fps || 8)
+      })).sort((a,b) => a.key.localeCompare(b.key, undefined, { numeric: true }));
+      return [name, { image, frames, meta: atlas.meta || {}, duration: frames.reduce((n,f) => n + f.duration, 0), loop: atlas.meta && atlas.meta.loop !== false }];
+    } catch (err) {
+      return null;
+    }
+  }));
+  for (const item of loaded) if (item) MOSS_KNIGHT[item[0]] = item[1];
+}
+if (typeof fetch === 'function' && typeof Image !== 'undefined') loadMossKnightAnimations();
+
+function drawMossKnightFrame(name, elapsed, x, y, w, h, face, alpha, loop) {
+  const animation = MOSS_KNIGHT[name];
+  if (!animation || !animation.image || !animation.frames.length) return false;
+  const duration = animation.duration;
+  let time = Math.max(0, elapsed || 0) * 1000;
+  if (loop === undefined ? animation.loop : loop) time %= duration;
+  else time = Math.min(time, Math.max(0, duration - 1));
+  let frame = animation.frames[animation.frames.length - 1];
+  for (const candidate of animation.frames) {
+    if (time < candidate.duration) { frame = candidate; break; }
+    time -= candidate.duration;
+  }
+  const f = frame.frame, src = frame.source, trim = frame.trim;
+  const pivot = frame.pivot || {
+    x: (animation.meta.pivot_px && animation.meta.pivot_px[0] / src.w) || 0.5,
+    y: (animation.meta.pivot_px && animation.meta.pivot_px[1] / src.h) || 0.875
+  };
+  const sx = w / src.w, sy = h / src.h;
+  ctx.save();
+  ctx.globalAlpha *= alpha === undefined ? 1 : alpha;
+  ctx.translate(x, y); ctx.scale(face === -1 ? -1 : 1, 1);
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(animation.image, f.x, f.y, f.w, f.h,
+    -pivot.x * w + trim.x * sx, -pivot.y * h + trim.y * sy, trim.w * sx, trim.h * sy);
+  ctx.restore();
+  return true;
+}
+function mossAnimationDuration(name) { return MOSS_KNIGHT[name] ? MOSS_KNIGHT[name].duration / 1000 : 0.5; }
+
 function tilePattern() {
   if (GAME_ART.tilePattern) return GAME_ART.tilePattern;
   const im = GAME_ART.worlds;
@@ -245,33 +305,39 @@ function drawNPCs(rm) {
   }
 }
 function drawPlayer(p) {
-  if (p.dead) return;
   const blink = p.inv > 0 && ((TM * 18) | 0) % 2 === 0;
   const moving = p.ground && Math.abs(p.vx) > 38;
-  let row = 0, col = Math.floor(TM * 1.5) % 4;
-  if (p.dashT > 0) { row = 3; col = 3; }
-  else if (p.atkT > 0 && p.atkAge < 0.24) {
-    row = 3; col = p.atkDir === 'u' ? 0 : p.atkDir === 'd' ? 2 : 1;
-  } else if (!p.ground) { row = 2; col = p.vy < -90 ? 1 : 0; }
-  else if (moving) { row = 1; col = Math.floor(p.anim * 1.4) % 4; }
   const alpha = blink ? 0.42 : 1;
-  if (p.dashT > 0) {
+  let animation = 'idle', elapsed = TM, loop = true;
+  if (p.dead) { animation = 'death'; elapsed = Math.max(0, 2 - (G ? G.deadT : 2)); loop = false; }
+  else if ((p.hurtAnimT || 0) >= 0.0 && (p.hurtAnimT || 0) < 1) { animation = 'hurt'; elapsed = p.hurtAnimT || 0; loop = false; }
+  else if (p.dashT > 0) { animation = 'roll'; elapsed = ((0.18 - p.dashT) / 0.18) * mossAnimationDuration('roll'); loop = false; }
+  else if (p.atkT > 0 && p.atkAge < p.atkDur) { animation = 'attack'; elapsed = (p.atkAge / Math.max(0.01, p.atkDur)) * mossAnimationDuration('attack'); loop = false; }
+  else if (!p.ground) { animation = 'jump'; elapsed = p.airAnimT || 0; loop = false; }
+  else if (moving) { animation = 'walk'; elapsed = TM; loop = true; }
+  const drawX = p.x, drawY = p.y + 1, drawW = 104, drawH = 112;
+  if (p.dashT > 0 && !p.dead) {
     for (let i = 3; i >= 1; i--) {
-      drawKnightFrame(3, 3, p.x - p.dashDir * i * 19, p.y + 1, 82, 82, p.dashDir, 0.10 + (4 - i) * 0.055);
+      drawMossKnightFrame('roll', Math.max(0, elapsed - i * 0.035), p.x - p.dashDir * i * 19, drawY, drawW, drawH, p.dashDir, 0.09 + (4-i) * 0.05, false);
     }
   }
   if (p.healT > 0) glow(p.x, p.y - 34, 66 + p.healT * 26, '#fff6c8', 0.52);
   if (p.inv > 0 && !blink) glow(p.x, p.y - 38, 48, '#b9d5ff', 0.20);
+  if (drawMossKnightFrame(animation, elapsed, drawX, drawY, drawW, drawH, p.face, alpha, loop)) return;
+  if (p.dead) return;
+  let row = 0, col = Math.floor(TM * 1.5) % 4;
+  if (p.dashT > 0) { row = 3; col = 3; }
+  else if (p.atkT > 0 && p.atkAge < 0.24) { row = 3; col = p.atkDir === 'u' ? 0 : p.atkDir === 'd' ? 2 : 1; }
+  else if (!p.ground) { row = 2; col = p.vy < -90 ? 1 : 0; }
+  else if (moving) { row = 1; col = Math.floor(p.anim * 1.4) % 4; }
   if (!drawKnightFrame(row, col, p.x, p.y + 1, 84, 84, p.face, alpha)) {
-    // Safe fallback for offline browsers if the art assets are unavailable.
     ctx.save(); ctx.translate(p.x, p.y); ctx.scale(p.face, 1);
     ctx.fillStyle = '#080a10'; ctx.strokeStyle = '#aab8d8'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(-9, -7); ctx.lineTo(-11, -32); ctx.quadraticCurveTo(0, -43, 11, -32);
     ctx.lineTo(9, -7); ctx.closePath(); ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#eef2fb'; ctx.beginPath(); ctx.ellipse(0, -39, 9, 10, 0, 0, 7); ctx.fill();
     ctx.beginPath(); ctx.moveTo(-5, -47); ctx.lineTo(-9, -62); ctx.lineTo(-1, -49);
-    ctx.moveTo(5, -47); ctx.lineTo(9, -62); ctx.lineTo(1, -49); ctx.fill();
-    ctx.restore();
+    ctx.moveTo(5, -47); ctx.lineTo(9, -62); ctx.lineTo(1, -49); ctx.fill(); ctx.restore();
   }
 }
 

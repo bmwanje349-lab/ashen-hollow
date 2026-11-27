@@ -6,7 +6,7 @@ function toast(m) { toastMsg = m; toastT = 2.4; }
 function newPlayer() {
   const p = newBody(save.ab);
   Object.assign(p, { hp: save.maxhp, maxhp: save.maxhp, soul: 0, inv: 0, atkT: 0, atkDur: 0.3, atkAge: 0, atkDir: 'f', atkFace: 1, hitSet: new Set(), healT: 0,
-    dead: false, safe: { x: 0, y: 0 }, anim: 0, wasGround: true, fall: 0, noCtl: false });
+    dead: false, safe: { x: 0, y: 0 }, anim: 0, airAnimT: 0, hurtAnimT: -1, wasGround: true, fall: 0, noCtl: false });
   return p;
 }
 function startGame() {
@@ -38,7 +38,7 @@ function hurtPlayer(dmg, srcX) {
   const p = G.p;
   if (p.inv > 0 || p.dead) return;
   if (save.equipped.includes('ward') && Math.random() < 0.25) { p.inv = 0.28; sfx('clink'); spawnParts(p.x, p.y - 24, 8, '#f4d39a', 180, 0.45); toast('ASHEN WARD'); return; }
-  p.hp -= dmg; p.inv = 1.4; p.hurtT = 0.28; p.healT = 0; p.dashT = 0;
+  p.hp -= dmg; p.inv = 1.4; p.hurtT = 0.28; p.hurtAnimT = 0; p.healT = 0; p.dashT = 0;
   p.vx = sg(p.x - srcX) * 330; p.vy = -340; p.ground = false;
   G.hitstop = Math.max(G.hitstop, 0.1); G.shake = Math.max(G.shake, 12);
   sfx('hurt'); spawnParts(p.x, p.y - 22, 14, '#e8eeff', 300, 0.6);
@@ -122,6 +122,8 @@ function updPlayer(dt) {
   if (p.dashStarted) { sfx('dash'); G.trailT = 0.2; }
   if (p.ground && !wasG && vyBefore > 400) { sfx('land'); spawnParts(p.x, p.y, 5, '#9aa4c0', 120, 0.3); }
   p.anim += dt * Math.abs(p.vx) / 40;
+  if (!p.ground) p.airAnimT = (p.airAnimT || 0) + dt; else p.airAnimT = 0;
+  if (p.hurtAnimT >= 0) { p.hurtAnimT += dt; if (p.hurtAnimT > mossAnimationDuration('hurt')) p.hurtAnimT = -1; }
   if (p.dashT > 0 && Math.random() < 0.7) G.parts.push({ x: p.x - p.dashDir * 10, y: p.y - rnd(8, 36), vx: 0, vy: 0, life: 0.3, max: 0.3, col: '#cfe0ff', sz: rnd(3, 6), g: 0 });
   /* safe spot */
   if (p.ground) {
