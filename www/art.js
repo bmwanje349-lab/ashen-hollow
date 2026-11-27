@@ -60,6 +60,55 @@ function genBG(rm) {
   }
   return a;
 }
+function drawDepthLayers(rm, cx, cy, z) {
+  const zone = rm.zone, seed = rm.seed >>> 0;
+  const farX = cx * 0.12, midX = cx * 0.28, nearX = cx * 0.48;
+  ctx.save();
+  /* Far silhouettes: monumental shapes that drift slower than the room. */
+  ctx.fillStyle = zone === 1 ? '#07171b' : zone === 2 ? '#1c0b09' : zone === 3 ? '#100d22' : '#0b1220';
+  for (let i = -2; i < 9; i++) {
+    const h = 170 + hash2(i + seed % 31, zone + 4) * 190;
+    const x = i * 210 - farX + hash2(i + 8, seed % 17) * 90;
+    const y = H - 22 + cy * 0.045;
+    ctx.globalAlpha = 0.72;
+    if (zone === 1) {
+      ctx.beginPath(); ctx.moveTo(x - 55, y); ctx.lineTo(x - 22, y - h * 0.72); ctx.quadraticCurveTo(x, y - h * 1.12, x + 20, y - h * 0.7); ctx.lineTo(x + 62, y); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = 'rgba(83,151,145,.14)'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(x, y - h * .7); ctx.lineTo(x + 4, y - h * .25); ctx.stroke();
+    } else if (zone === 2) {
+      ctx.beginPath(); ctx.moveTo(x - 65, y); ctx.lineTo(x - 35, y - h * .68); ctx.lineTo(x - 9, y - h); ctx.lineTo(x + 5, y - h * .62); ctx.lineTo(x + 35, y - h * .82); ctx.lineTo(x + 66, y); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,143,83,.12)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x - 8, y - h * .65); ctx.lineTo(x + 3, y - h * .22); ctx.stroke();
+    } else if (zone === 3) {
+      ctx.beginPath(); ctx.moveTo(x - 78, y); ctx.lineTo(x - 72, y - h * .76); ctx.quadraticCurveTo(x, y - h * 1.12, x + 72, y - h * .76); ctx.lineTo(x + 78, y); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#05050d'; ctx.beginPath(); ctx.arc(x, y - h * .76, 45 + h * .08, Math.PI, 0); ctx.lineTo(x + 40, y); ctx.lineTo(x - 40, y); ctx.closePath(); ctx.fill();
+    } else {
+      ctx.beginPath(); ctx.moveTo(x - 62, y); ctx.lineTo(x - 45, y - h * .82); ctx.lineTo(x - 16, y - h); ctx.lineTo(x + 18, y - h * .82); ctx.lineTo(x + 58, y); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = 'rgba(143,170,214,.12)'; ctx.fillRect(x - 2, y - h * .68, 4, h * .48);
+    }
+  }
+  /* Middle layer: broken pillars, hanging roots, and suspended stonework. */
+  for (let i = -1; i < 12; i++) {
+    const x = i * 154 - midX + hash2(i + 31, seed % 23) * 80;
+    const top = 90 + hash2(i + 12, zone + 21) * 150;
+    const base = H + cy * .12;
+    ctx.globalAlpha = .32;
+    ctx.fillStyle = zone === 1 ? '#16343a' : zone === 2 ? '#54251b' : zone === 3 ? '#30274d' : '#263653';
+    if (zone === 1) {
+      ctx.beginPath(); ctx.moveTo(x - 22, 0); ctx.quadraticCurveTo(x - 5, top * .55, x + 2, top); ctx.quadraticCurveTo(x + 14, top * .7, x + 28, 0); ctx.fill();
+      ctx.strokeStyle = 'rgba(92,177,158,.26)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x + 2, top * .4); ctx.quadraticCurveTo(x - 16, top * .7, x - 8, top); ctx.stroke();
+    } else {
+      ctx.beginPath(); ctx.moveTo(x - 28, base); ctx.lineTo(x - 20, base - top); ctx.lineTo(x - 7, base - top - 18); ctx.lineTo(x + 8, base - top + 6); ctx.lineTo(x + 24, base); ctx.closePath(); ctx.fill();
+      if (zone === 3) { ctx.strokeStyle = 'rgba(190,169,255,.2)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, base - top); ctx.lineTo(x, base - 12); ctx.stroke(); }
+    }
+  }
+  /* Near foreground framing, kept translucent so the player and platforms stay readable. */
+  ctx.globalAlpha = .18; ctx.strokeStyle = zone === 1 ? '#6eb4a6' : zone === 2 ? '#e17850' : zone === 3 ? '#8e7bd0' : '#8398bf'; ctx.lineWidth = 3;
+  for (let i = -1; i < 8; i++) {
+    const x = i * 240 - nearX + hash2(i + 91, seed % 41) * 70;
+    const h = 45 + hash2(i + 71, zone + 6) * 90;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.bezierCurveTo(x - 20, h, x + 26, h * 1.4, x + 6, h * 2); ctx.stroke();
+  }
+  ctx.globalAlpha = 1; ctx.restore();
+}
 function drawBG(rm, cx, cy) {
   const z = ZONES[rm.zone], im = GAME_ART.worlds;
   if (im && im.complete && im.naturalWidth) {
@@ -69,6 +118,7 @@ function drawBG(rm, cx, cy) {
     shade.addColorStop(0, 'rgba(3,5,12,0.06)'); shade.addColorStop(0.55, 'rgba(3,5,12,0.05)');
     shade.addColorStop(1, 'rgba(2,4,10,0.58)');
     ctx.fillStyle = shade; ctx.fillRect(0, 0, W, H);
+    drawDepthLayers(rm, cx, cy, z);
     glow(W * 0.68 - cx * 0.035, 145 - cy * 0.025, 250, z.glow, 0.13);
     for (let i = 0; i < 3; i++) {
       const y = 270 + i * 92 + Math.sin(TM * 0.18 + i) * 12;
@@ -83,6 +133,7 @@ function drawBG(rm, cx, cy) {
   const gr = ctx.createLinearGradient(0, 0, 0, H);
   gr.addColorStop(0, z.bg0); gr.addColorStop(1, z.bg1); ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
   if (!rm._bg) rm._bg = genBG(rm);
+  drawDepthLayers(rm, cx, cy, z);
   glow(W * 0.7 - cx * 0.05, 120, 260, z.glow, 0.10);
   const layers = [{ arr: rm._bg[0], f: 0.18, col: z.far, base: H - 60 }, { arr: rm._bg[1], f: 0.4, col: z.mid, base: H - 10 }];
   layers.forEach(L => {
