@@ -130,7 +130,7 @@ mkRoom('r10', 'Ember Hall', 2, 2, 1, 48, 17, (o) => {
   o.plat(10, 11, 4); o.plat(16, 8, 4); o.plat(24, 11, 4);
   o.bench(6, 13); o.bench(37, 13);
   o.pick('C', 8, 13, 'charm_ward');
-  o.pick('A', 20, 13, 'lance');
+  o.pick('A', 10, 13, 'lance');
   o.sign(34, 13, 'North: a duelist waits in a high chamber. East: the Hollow Throne.');
   o.ent('h', 14, 13); o.ent('l', 20, 13); o.ent('l', 28, 13); o.ent('f', 22, 5); o.ent('f', 31, 5); o.ent('s', 32, 13);
 });
