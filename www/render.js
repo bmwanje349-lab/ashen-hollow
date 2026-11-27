@@ -242,11 +242,99 @@ function drawJournal() {
   npcs.forEach((n,i)=>txt((n[1]?'◆ ':'◇ ')+n[0],618+i*82,411,11,n[1]?'#d8cda9':'#77839b','left'));
   drawButtons();
 }
-function drawWaystones() { ctx.fillStyle='rgba(2,4,10,.94)';ctx.fillRect(0,0,W,H);glow(W/2,90,300,'#e6d3a3',.12);txt('WAYSTONES',W/2,58,34,'#f4e8c9','center');txt('Rest at a stone bench to awaken its station',W/2,96,16,'#b8b1a1','center','italic');if(!Object.keys(save.stations||{}).some(id=>save.stations[id]))txt('No stations awakened yet.',W/2,250,20,'#c5cce0','center');drawButtons(); }
+function waystoneMapPoint(room) {
+  const rooms = Object.values(ROOMS);
+  const xs = rooms.map(r => r.gx), ys = rooms.map(r => r.gy);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const x = 82 + (room.gx - minX) / Math.max(1, maxX - minX) * (W - 164);
+  const y = 136 + (room.gy - minY) / Math.max(1, maxY - minY) * 224;
+  return {x,y};
+}
+function drawWaystones() {
+  ctx.fillStyle='#050811';ctx.fillRect(0,0,W,H);
+  const wash=ctx.createLinearGradient(0,0,W,H);
+  wash.addColorStop(0,'rgba(23,34,51,.76)');wash.addColorStop(.55,'rgba(4,9,18,.96)');wash.addColorStop(1,'rgba(29,18,21,.84)');
+  ctx.fillStyle=wash;ctx.fillRect(0,0,W,H);
+  glow(W*.22,210,230,'#8eb8ca',.11);glow(W*.78,300,220,'#d5ad77',.09);
+  txt('WAYSTONE NETWORK',W/2,43,30,'#f3e9d1','center');
+  txt('THE OLD ROADS  /  REST TO AWAKEN A STATION',W/2,72,11,'#9baac0','center');
+  ctx.strokeStyle='rgba(190,169,130,.52)';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(64,94);ctx.lineTo(W-64,94);ctx.stroke();
+
+  const ids=Object.keys(ROOMS), edges=new Set();
+  for(const id of ids){
+    const room=ROOMS[id],a=waystoneMapPoint(room);
+    for(const exit of room.exits||[]){
+      if(!ROOMS[exit.to])continue;
+      const key=[id,exit.to].sort().join('|');if(edges.has(key))continue;edges.add(key);
+      const b=waystoneMapPoint(ROOMS[exit.to]),awake=!!save.stations[id]||!!save.stations[exit.to];
+      const both=!!save.stations[id]&&!!save.stations[exit.to];
+      ctx.save();ctx.lineWidth=both?3.1:awake?2:1.25;ctx.lineCap='round';
+      ctx.strokeStyle=both?'rgba(224,197,137,.84)':awake?'rgba(133,169,190,.55)':'rgba(94,111,136,.30)';
+      if(!both)ctx.setLineDash([5,7]);
+      ctx.beginPath();ctx.moveTo(a.x,a.y);
+      const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+      ctx.quadraticCurveTo(mx+(b.y-a.y)*.045,my-(b.x-a.x)*.035,b.x,b.y);
+      ctx.stroke();ctx.restore();
+    }
+  }
+
+  const stationIds=Object.keys(save.stations||{}).filter(id=>save.stations[id]&&ROOMS[id]&&ROOMS[id].benches&&ROOMS[id].benches.length);
+  const current=G&&G.room?G.room.id:null;
+  for(const id of ids){
+    const room=ROOMS[id],p=waystoneMapPoint(room);
+    const awakened=!!save.stations[id]&&!!(room.benches&&room.benches.length);
+    const dormant=!!(room.benches&&room.benches.length)&&!awakened;
+    const boss=!!room.boss;
+    if(current===id){
+      ctx.save();ctx.strokeStyle='rgba(239,242,255,.86)';ctx.lineWidth=2;ctx.setLineDash([3,4]);
+      ctx.beginPath();ctx.arc(p.x,p.y,19+Math.sin(TM*3)*2,0,Math.PI*2);ctx.stroke();ctx.restore();
+    }
+    ctx.save();
+    if(awakened){glow(p.x,p.y,34,'#e9d5a5',.32);ctx.fillStyle='#c5a86e';ctx.strokeStyle='#fff0c9';ctx.lineWidth=2.2;}
+    else if(dormant){ctx.fillStyle='#202b3a';ctx.strokeStyle='#a0b4c4';ctx.lineWidth=1.5;}
+    else if(boss){ctx.fillStyle='#311c22';ctx.strokeStyle='#b66b61';ctx.lineWidth=1.7;}
+    else{ctx.fillStyle='#111c2b';ctx.strokeStyle='#53677f';ctx.lineWidth=1.2;}
+    ctx.beginPath();ctx.arc(p.x,p.y,awakened?12:dormant?9:boss?8:5,0,Math.PI*2);ctx.fill();ctx.stroke();
+    if(awakened){ctx.strokeStyle='rgba(255,244,208,.9)';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(p.x,p.y-6);ctx.lineTo(p.x+5,p.y);ctx.lineTo(p.x,p.y+6);ctx.lineTo(p.x-5,p.y);ctx.closePath();ctx.stroke();}
+    else if(dormant){ctx.fillStyle='#b9cbd8';txt('◇',p.x,p.y,15,'#c8d4dd','center');}
+    else if(boss){txt('✕',p.x,p.y,12,'#e3a29a','center');}
+    ctx.restore();
+
+    if(awakened||dormant){
+      const label=STATION_NAMES[id]||room.name;
+      const above=p.y>315, ly=p.y+(above?-24:25);
+      ctx.save();ctx.font='bold 11px Georgia';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillStyle=awakened?'#eee2c5': '#aab8c7';
+      ctx.shadowColor='rgba(0,0,0,.9)';ctx.shadowBlur=5;
+      ctx.fillText(label,p.x,ly);ctx.restore();
+      if(current===id){txt('YOU',p.x,above?ly-14:ly+14,9,'#ffffff','center');}
+    }
+  }
+  const total=Object.keys(ROOMS).filter(id=>ROOMS[id].benches&&ROOMS[id].benches.length).length;
+  txt(stationIds.length+' / '+total+' stations awakened',W/2,410,13,'#c9b992','center');
+  txt('✦  READY TO TRAVEL      ◇  REST HERE TO AWAKEN      ✕  GUARDIAN',W/2,431,10,'#8292a9','center');
+  if(!stationIds.length)txt('No stations awakened. Find a stone bench and rest with UP.',W/2,250,17,'#d5dbea','center');
+  else if(stationIds.length===1)txt('Only one station is known. Awaken another bench to open a route.',W/2,470,13,'#9cabc0','center');
+  drawButtons();
+}
 function drawButtons() {
   for (const b of buttons) {
     const x=b.x,y=b.y,w=b.w,h=b.h,cut=Math.min(10,h*.22);
     ctx.save();
+    if(b.station){
+      const cx=x+w/2,cy=y+h/2,rad=Math.min(w,h)*.43;
+      const tint=b.stationCurrent?'#f4e6c5':'#c4d3dd';
+      glow(cx,cy,rad*2.3,b.stationCurrent?'#f2d18a':'#8eb8cc',b.stationCurrent?.48:.25);
+      const g=ctx.createRadialGradient(cx-rad*.3,cy-rad*.4,2,cx,cy,rad*1.3);
+      g.addColorStop(0,b.stationCurrent?'#59677a':'#334b5c');g.addColorStop(1,'#0a121e');
+      ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,rad,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle=tint;ctx.lineWidth=b.stationCurrent?2.5:1.6;ctx.beginPath();ctx.arc(cx,cy,rad,0,Math.PI*2);ctx.stroke();
+      ctx.strokeStyle=b.stationCurrent?'rgba(255,240,205,.68)':'rgba(190,216,227,.48)';
+      ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy,rad-5,0,Math.PI*2);ctx.stroke();
+      ctx.fillStyle=tint;ctx.font='bold '+(b.fs||22)+'px Georgia';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(b.label,cx,cy+1);
+      ctx.restore();continue;
+    }
     ctx.beginPath(); ctx.moveTo(x+cut,y); ctx.lineTo(x+w-cut,y); ctx.lineTo(x+w,y+cut); ctx.lineTo(x+w,y+h-cut); ctx.lineTo(x+w-cut,y+h); ctx.lineTo(x+cut,y+h); ctx.lineTo(x,y+h-cut); ctx.lineTo(x,y+cut); ctx.closePath();
     const g=ctx.createLinearGradient(x,y,x,y+h);
     if(b.hud){g.addColorStop(0,'rgba(24,35,55,.78)');g.addColorStop(1,'rgba(4,9,18,.72)');}

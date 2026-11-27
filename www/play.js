@@ -267,9 +267,12 @@ function go(s) {
     save.charms.forEach((key, i) => { const on = save.equipped.includes(key); btn(W/2-205, 204+i*68, 410, 52, (on?'◆  ':'◇  ')+CHARM_DEF[key].name+(on?'  • BOUND':'  • EQUIP'), () => { if(save.equipped.includes(key)) save.equipped=save.equipped.filter(v=>v!==key); else if(save.equipped.length<2) save.equipped.push(key); else toast('Two charm slots. Unequip one first.'); persist(); go('charms'); }, { fs:16 }); });
     btn(W/2-100, 454, 200, 44, 'BACK', () => go('pause'));
   } else if (s === 'waystones') {
-    const ids = Object.keys(save.stations).filter(id => save.stations[id] && ROOMS[id]);
-    ids.forEach((id,i) => { const col=i%2, row=Math.floor(i/2); btn(W/2-310+col*320, 150+row*64, 300, 52, STATION_NAMES[id] || ROOMS[id].name, () => travelTo(id), { fs:15 }); });
-    btn(W/2-100, 464, 200, 42, 'BACK', () => go('pause'));
+    const ids = Object.keys(save.stations||{}).filter(id => save.stations[id] && ROOMS[id] && ROOMS[id].benches && ROOMS[id].benches.length);
+    ids.forEach(id => {
+      const point=waystoneMapPoint(ROOMS[id]);
+      btn(point.x-23,point.y-23,46,46,'✦',()=>travelTo(id),{fs:22,hud:true,station:true,stationId:id,stationCurrent:!!(G&&G.room&&G.room.id===id)});
+    });
+    btn(W/2-94, 476, 188, 38, 'RETURN', () => go('pause'), {fs:14});
   } else if (s === 'ending') {
     btn(cx, H - 90, 240, 50, 'KEEP EXPLORING', () => { go('play'); G.bossDeath = null; });
   }
