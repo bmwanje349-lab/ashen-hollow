@@ -5,12 +5,14 @@ let TM = 0;
 const GAME_ART = { worlds: null, knight: null, tilePattern: null };
 const NPC_ART = {};
 const ENEMY_ART = {};
+const BOSS_ART = {};
 try {
   if (typeof Image !== 'undefined') {
     GAME_ART.worlds = new Image(); GAME_ART.worlds.src = 'assets/worlds.webp';
     GAME_ART.knight = new Image(); GAME_ART.knight.src = 'assets/knight.png';
     for (const id of ['mara','oren','pilgrim']) { NPC_ART[id] = new Image(); NPC_ART[id].src = 'assets/npc-' + id + '.svg'; }
     for (const id of ['c','f','h','s','l']) { ENEMY_ART[id] = new Image(); ENEMY_ART[id].src = 'assets/enemy-' + id + '.svg'; }
+    for (const id of ['warden','weaver','duelist','sovereign']) { BOSS_ART[id] = new Image(); BOSS_ART[id].src = 'assets/boss-' + id + '.svg'; }
   }
 } catch (e) {}
 function drawKnightFrame(row, col, x, y, w, h, face, alpha) {

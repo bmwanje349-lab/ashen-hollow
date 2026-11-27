@@ -8,6 +8,17 @@ function bossPose(b) {
 function drawBoss(b) {
   if (b.dead) return;
   const pz = bossPose(b), fl = b.flash > 0, body = fl ? '#ffffff' : '#07090f', rim = fl ? '#ffffff' : BOSS_DEF[b.id].col;
+  const bossImage = BOSS_ART[b.id];
+  if (bossImage && bossImage.complete && bossImage.naturalWidth) {
+    ctx.save(); ctx.translate(b.x,b.y); ctx.scale(b.face,1); ctx.globalAlpha=Math.max(.05,b.vis);
+    const bob=Math.sin(TM*2.1+(b.x*.01))*1.5+(b.st==='tele'?Math.sin(TM*34)*1.5:0);
+    ctx.translate(0,bob); glow(0,-b.h*.62,b.h*1.25,rim,b.st==='tele'?.52:.17);
+    const w=Math.max(94,b.w*2.05),h=Math.max(116,b.h*1.32);
+    ctx.imageSmoothingEnabled=true;ctx.drawImage(bossImage,-w/2,-h,w,h);
+    if(fl){ctx.globalCompositeOperation='source-atop';ctx.fillStyle='rgba(255,255,255,.7)';ctx.fillRect(-w/2,-h,w,h);ctx.globalCompositeOperation='source-over';}
+    if(b.st==='tele'){ctx.strokeStyle='rgba(255,235,190,.62)';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(0,-b.h*.48,b.w*1.1,b.h*.72,0,0,7);ctx.stroke();}
+    ctx.restore(); return;
+  }
   ctx.save(); ctx.translate(b.x, b.y); ctx.globalAlpha = Math.max(0.05, b.vis);
   if (b.st === 'tele') { glow(0, -b.h / 2, b.h * 1.1, '#ffffff', 0.25 + 0.2 * Math.sin(TM * 40)); }
   ctx.scale(b.face, 1); ctx.fillStyle = body; ctx.strokeStyle = rim; ctx.lineWidth = 2.4; ctx.lineJoin = 'round';
