@@ -170,10 +170,23 @@ function drawCharms() {
 function drawWaystones() { ctx.fillStyle='rgba(2,4,10,.94)';ctx.fillRect(0,0,W,H);glow(W/2,90,300,'#e6d3a3',.12);txt('WAYSTONES',W/2,58,34,'#f4e8c9','center');txt('Rest at a stone bench to awaken its station',W/2,96,16,'#b8b1a1','center','italic');if(!Object.keys(save.stations||{}).some(id=>save.stations[id]))txt('No stations awakened yet.',W/2,250,20,'#c5cce0','center');drawButtons(); }
 function drawButtons() {
   for (const b of buttons) {
-    roundRect(b.x, b.y, b.w, b.h, 8);
-    ctx.fillStyle = b.hud ? 'rgba(0,0,0,0.45)' : 'rgba(10,14,24,0.88)'; ctx.fill();
-    ctx.lineWidth = 1.8; ctx.strokeStyle = b.hud ? 'rgba(200,215,255,0.5)' : '#7b8bb4'; ctx.stroke();
-    txt(b.label, b.x + b.w / 2, b.y + b.h / 2, b.fs || 22, '#e8eefc', 'center');
+    const x=b.x,y=b.y,w=b.w,h=b.h,cut=Math.min(10,h*.22);
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(x+cut,y); ctx.lineTo(x+w-cut,y); ctx.lineTo(x+w,y+cut); ctx.lineTo(x+w,y+h-cut); ctx.lineTo(x+w-cut,y+h); ctx.lineTo(x+cut,y+h); ctx.lineTo(x,y+h-cut); ctx.lineTo(x,y+cut); ctx.closePath();
+    const g=ctx.createLinearGradient(x,y,x,y+h);
+    if(b.hud){g.addColorStop(0,'rgba(24,35,55,.78)');g.addColorStop(1,'rgba(4,9,18,.72)');}
+    else {g.addColorStop(0,'rgba(31,42,61,.96)');g.addColorStop(.48,'rgba(12,19,32,.97)');g.addColorStop(1,'rgba(5,9,17,.98)');}
+    ctx.fillStyle=g;ctx.shadowColor='rgba(0,0,0,.55)';ctx.shadowBlur=b.hud?5:12;ctx.shadowOffsetY=3;ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+    ctx.lineWidth=b.hud?1.4:1.8;ctx.strokeStyle=b.hud?'rgba(181,204,230,.56)':'#8999b5';ctx.stroke();
+    if(!b.hud){
+      ctx.beginPath();ctx.moveTo(x+cut+7,y+4);ctx.lineTo(x+w-cut-7,y+4);ctx.strokeStyle='rgba(227,213,177,.34)';ctx.lineWidth=1;ctx.stroke();
+      ctx.strokeStyle='rgba(128,159,190,.45)';ctx.lineWidth=1;
+      for(const side of [0,1]){const sx=side?x+w-9:x+9;ctx.beginPath();ctx.moveTo(sx,y+7);ctx.lineTo(sx,y+13);ctx.stroke();}
+      ctx.fillStyle='#d9c79b';ctx.beginPath();ctx.moveTo(x+13,y+h/2);ctx.lineTo(x+17,y+h/2-4);ctx.lineTo(x+21,y+h/2);ctx.lineTo(x+17,y+h/2+4);ctx.closePath();ctx.fill();
+    }
+    ctx.shadowColor='rgba(210,225,255,.35)';ctx.shadowBlur=4;
+    txt(b.label,x+w/2+(b.hud?0:5),y+h/2,b.fs||20,b.hud?'#e1eaff':'#f0eee4','center');
+    ctx.restore();
   }
 }
 function drawTitle() {
