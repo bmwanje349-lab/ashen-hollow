@@ -49,6 +49,7 @@ mkRoom('r2', 'Forgotten Crossroads', 0, 1, 2, 52, 17, (o) => {
   o.solid(45, 9, 7, 1); o.air(51, 6, 1, 3); o.exit(51, 6, 1, 3, 'r9', 2, 8);
   o.plat(8, 11, 4); o.plat(14, 11, 4); o.plat(11, 8, 3);
   o.bench(18, 13);
+  o.pick('C', 6, 13, 'charm_soul');
   o.sign(40, 13, 'A ledge too high to reach. A gift of flight would carry you there.');
   o.sign(48, 13, 'Ahead: the Warden\'s Hall. Below: Mosswell.');
   o.ent('c', 10, 13); o.ent('f', 30, 5); o.ent('c', 32, 13); o.ent('c', 38, 13);
@@ -76,6 +77,7 @@ mkRoom('r5', 'The Sundered Chasm', 0, 2, 3, 48, 17, (o) => {
   o.air(47, 10, 1, 4); o.exit(47, 10, 1, 4, 'r6', 1, 13);
   o.air(11, 14, 10, 2); o.spikes(11, 15, 10);
   o.bench(4, 13);
+  o.pick('C', 20, 13, 'charm_reach');
   o.sign(8, 13, 'The path is severed. A burst of speed might carry you across.');
   o.ent('c', 6, 13); o.ent('c', 25, 13); o.ent('s', 32, 13); o.ent('h', 38, 13); o.ent('f', 41, 5);
 });
@@ -127,6 +129,7 @@ mkRoom('r10', 'Ember Hall', 2, 2, 1, 48, 17, (o) => {
   o.solid(41, 9, 7, 1); o.air(47, 6, 1, 3); o.exit(47, 6, 1, 3, 'r12', 1, 10);
   o.plat(10, 11, 4); o.plat(16, 8, 4); o.plat(24, 11, 4);
   o.bench(6, 13); o.bench(37, 13);
+  o.pick('C', 8, 13, 'charm_ward');
   o.sign(34, 13, 'North: a duelist waits in a high chamber. East: the Hollow Throne.');
   o.ent('h', 14, 13); o.ent('l', 20, 13); o.ent('l', 28, 13); o.ent('f', 22, 5); o.ent('f', 31, 5); o.ent('s', 32, 13);
 });

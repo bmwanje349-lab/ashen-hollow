@@ -91,7 +91,7 @@ function hurtEnemy(e, dmg, dir) {
   e.hp -= dmg; e.flash = 0.12; e.stun = 0.18; e.vx += dir * (e.t === 'h' ? 120 : 260); if (e.t === 'f') e.vy -= 80;
   if (e.st === 'wind' && e.t === 'h') e.stT = Math.max(e.stT, 0.2);
   spawnParts(e.x, e.y - e.h / 2, 6, '#dfe8ff', 220, 0.4);
-  G.p.soul = Math.min(99, G.p.soul + 11);
+  G.p.soul = Math.min(99, G.p.soul + (save.equipped.includes('soul') ? 16.5 : 11));
   if (e.hp <= 0) {
     e.dead = true; spawnParts(e.x, e.y - e.h / 2, 18, '#bfc9e8', 300, 0.8);
     sfx('hit'); G.hitstop = Math.max(G.hitstop, 0.07);
@@ -207,7 +207,7 @@ function hurtBoss(b, dmg, dir) {
   if (b.st === 'intro' || b.dead) return false;
   b.hp -= dmg; b.flash = 0.1; b.stack++;
   spawnParts(b.x, b.y - b.h / 2, 7, '#ffffff', 260, 0.45); sfx('bosshit');
-  G.p.soul = Math.min(99, G.p.soul + 11);
+  G.p.soul = Math.min(99, G.p.soul + (save.equipped.includes('soul') ? 16.5 : 11));
   if (b.hp <= 0) { b.hp = 0; killBoss(b); }
   return true;
 }
