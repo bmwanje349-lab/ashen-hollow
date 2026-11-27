@@ -18,6 +18,8 @@ jobs:
         run: npm test
       - name: Install CC0 Moss Knight animation pack
         run: bash scripts/install-cc0-art.sh
+      - name: Install CC0 fantasy monster animation pack
+        run: bash scripts/install-cc0-monsters.sh
       - name: Install Capacitor
         run: npm install
       - name: Create Android project
