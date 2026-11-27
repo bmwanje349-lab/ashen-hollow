@@ -22,6 +22,8 @@ jobs:
         with: { node-version: 20 }
       - name: Tests
         run: npm test
+      - name: Install CC0 Moss Knight animation pack
+        run: bash scripts/install-cc0-art.sh
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with: { path: www }
